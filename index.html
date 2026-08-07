@@ -3,7 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Primary Meta Tags -->
 <title>MD2HTML API — Convert Markdown to HTML via API</title>
+<meta name="title" content="MD2HTML API — Convert Markdown to HTML via API">
+<meta name="description" content="MD2HTML is a simple, fast API that converts Markdown to clean HTML. Pay-per-call with Litecoin micropayments — no subscriptions, no cards. Free tier of 10 calls included.">
+
+<!-- Open Graph / Social -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="http://147.15.103.217:8777/">
+<meta property="og:title" content="MD2HTML API — Convert Markdown to HTML via API">
+<meta property="og:description" content="A simple, fast API that converts Markdown to clean HTML. Pay-per-call with Litecoin. Free tier of 10 calls included — no subscriptions, no cards.">
+<meta property="og:image" content="">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MD2HTML API — Convert Markdown to HTML via API">
+<meta name="twitter:description" content="A simple, fast API that converts Markdown to clean HTML. Pay-per-call with Litecoin. Free tier of 10 calls included.">
+
 <style>
   :root {
     --bg: #0d1117;
@@ -26,7 +41,7 @@
     min-height: 100vh;
     padding: 2rem 1rem;
   }
-  .wrap { max-width: 760px; margin: 0 auto; }
+  .wrap { max-width: 880px; margin: 0 auto; }
   .badge {
     display: inline-block;
     font-size: 0.75rem;
@@ -100,6 +115,58 @@
   }
   .ratelimit strong { color: var(--warn); }
   .ratelimit code { font-family: var(--mono); color: var(--text); background: rgba(255,255,255,0.06); padding: 0.05rem 0.3rem; border-radius: 3px; }
+
+  /* --- Live Demo --- */
+  .demo {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: stretch;
+  }
+  .demo .pane { display: flex; flex-direction: column; gap: 0.4rem; }
+  .demo .pane label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); font-weight: 600;
+  }
+  .demo textarea {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.85rem 1rem; color: var(--text); font-family: var(--mono); font-size: 0.88rem;
+    line-height: 1.55; min-height: 280px; resize: vertical;
+  }
+  .demo textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .demo .output {
+    background: #ffffff; color: #1f2328; border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem 1.15rem; min-height: 280px; overflow-y: auto; line-height: 1.6; font-size: 0.95rem;
+  }
+  .demo .output h1, .demo .output h2, .demo .output h3 { margin: 0.4em 0; }
+  .demo .output h1 { font-size: 1.5rem; }
+  .demo .output h2 { font-size: 1.25rem; }
+  .demo .output h3 { font-size: 1.1rem; }
+  .demo .output p { margin: 0.5em 0; }
+  .demo .output code { background: #eff1f3; padding: 0.1em 0.35em; border-radius: 4px; font-family: var(--mono); font-size: 0.9em; }
+  .demo .output pre { background: #f6f8fa; border: 1px solid #d0d7de; color: #1f2328; }
+  .demo .output pre code { background: none; padding: 0; }
+  .demo .output ul, .demo .output ol { margin: 0.5em 0; padding-left: 1.5em; }
+  .demo .output blockquote { border-left: 3px solid #d0d7de; color: #656d76; margin: 0.6em 0; padding-left: 0.8em; }
+  .demo .output a { color: #0969da; }
+  .demo .output img { max-width: 100%; }
+  .demo .output hr { border: none; border-top: 1px solid #d0d7de; margin: 1em 0; }
+  .demo .status {
+    font-size: 0.78rem; color: var(--muted); font-family: var(--mono);
+  }
+  .demo .status .ok { color: var(--ltc); }
+  .demo .status .err { color: var(--warn); }
+  .demo .status .busy { color: var(--accent); }
+  @media (max-width: 680px) {
+    .demo { grid-template-columns: 1fr; }
+  }
+
+  /* --- Why use --- */
+  .why { list-style: none; }
+  .why li {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.15rem; margin-bottom: 0.7rem; display: flex; gap: 0.75rem; align-items: flex-start;
+  }
+  .why li .ico { font-size: 1.25rem; line-height: 1.5; flex-shrink: 0; }
+  .why li .ttl { font-weight: 600; color: var(--text); margin-bottom: 0.15rem; }
+  .why li .dsc { color: var(--muted); font-size: 0.9rem; }
 </style>
 </head>
 <body>
@@ -109,14 +176,65 @@
     <p class="tagline">Convert Markdown to HTML via API. <em>Simple. Fast. Crypto-micropay.</em></p>
 
     <section>
+      <h2>Live Demo</h2>
+      <div class="demo">
+        <div class="pane">
+          <label for="mdInput">Markdown</label>
+          <textarea id="mdInput" spellcheck="false" aria-label="Markdown input"># Hello **World** & *go* 👋
+
+- Bullet one
+- Bullet two
+- [A link](https://example.com)
+
+> Markdown in, clean HTML out.
+
+Type to see it convert live.</textarea>
+          <div class="status" id="demoStatus">Ready.</div>
+        </div>
+        <div class="pane">
+          <label for="htmlOutput">HTML Output</label>
+          <div class="output" id="htmlOutput" aria-label="Rendered HTML output"></div>
+        </div>
+      </div>
+      <p class="hint">Conversion hits <code class="path">POST http://147.15.103.217:8777/convert</code> in real time. First 10 calls are free.</p>
+    </section>
+
+    <section>
+      <h2>Why use MD2HTML?</h2>
+      <ul class="why">
+        <li>
+          <span class="ico">⚡</span>
+          <div>
+            <div class="ttl">Fast & stateless</div>
+            <div class="dsc">Single POST — Markdown in, clean HTML out. No SDK, no boilerplate, no auth keys to manage.</div>
+          </div>
+        </li>
+        <li>
+          <span class="ico">🪙</span>
+          <div>
+            <div class="ttl">Pay-per-call with Litecoin</div>
+            <div class="dsc">$0.001 per call, billed in LTC. No subscriptions, no credit cards, no lock-in. Top up once, ship.</div>
+          </div>
+        </li>
+        <li>
+          <span class="ico">🔌</span>
+          <div>
+            <div class="ttl">Drop into anything</div>
+            <div class="dsc">REST + JSON, CORS-enabled. Works from static sites, CI pipelines, CLIs, serverless functions — anywhere an HTTP client runs.</div>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <section>
       <h2>Quick Start</h2>
 <pre><span class="cmt"># Convert markdown to HTML in one request</span>
-<span class="cmd">curl</span> <span class="flag">-X</span> POST <code>/convert</code> <span class="str">\</span>
-  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\</span>
-  <span class="flag">-d</span> <span class="str">'{"markdown": "# Hello\n**World** & *go*"}'</span>
+<span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">http://147.15.103.217:8777/convert</span> <span class="str">\\</span>
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\\</span>
+  <span class="flag">-d</span> <span class="str">'{"markdown": "# Hello\\n**World** & *go*"}'</span>
 
 <span class="cmt"># Response</span>
-<span class="cmt"># {"html": "<h1>Hello</h1>\n<strong>World</strong> & <em>go</em>"}</span></pre>
+<span class="cmt"># {"html": "<h1>Hello</h1>\\n<strong>World</strong> & <em>go</em>"}</span></pre>
     </section>
 
     <section>
@@ -124,33 +242,39 @@
       <div class="endpoint">
         <h3><span class="method post">POST</span><code>/convert</code></h3>
         <p>Convert a Markdown document to HTML. Body: <code>{"markdown": "..."}</code>. Returns <code>{"html": "..."}</code>.</p>
-<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">/convert</span> <span class="str">\</span>
-  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\</span>
-  <span class="flag">-d</span> <span class="str">'{"markdown": "# Title\nText."}'</span></pre>
+<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">http://147.15.103.217:8777/convert</span> <span class="str">\\</span>
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\\</span>
+  <span class="flag">-d</span> <span class="str">'{"markdown": "# Title\\nText."}'</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/health</code></h3>
         <p>Liveness probe. Returns service uptime and status JSON. No auth required.</p>
-<pre><span class="cmd">curl</span> <span class="str">/health</span>
+<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217:8777/health</span>
 <span class="cmt"># {"status":"ok","uptime":4321}</span></pre>
+      </div>
+      <div class="endpoint">
+        <h3><span class="method get">GET</span><code>/docs</code></h3>
+        <p>Interactive API documentation (auto-generated). Explore all endpoints in your browser.</p>
+<pre><span class="cmt"># open in a browser</span>
+<span class="str">http://147.15.103.217:8777/docs</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method post">POST</span><code>/payment</code></h3>
         <p>Top up your API quota by reporting an LTC transaction. Body: <code>{"txid": "...", "amount": 0.01}</code>.</p>
-<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">/payment</span> <span class="str">\</span>
-  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\</span>
+<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">http://147.15.103.217:8777/payment</span> <span class="str">\\</span>
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\\</span>
   <span class="flag">-d</span> <span class="str">'{"txid":"abc123","amount":0.05}'</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/usage</code></h3>
         <p>Current month's call count and remaining free quota. Returns balance JSON.</p>
-<pre><span class="cmd">curl</span> <span class="str">/usage</span>
+<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217:8777/usage</span>
 <span class="cmt"># {"calls":24,"free_remaining":0,"credits":0.05}</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/stats</code></h3>
         <p>Aggregate service metrics: total calls, revenue (LTC), and uptime. Public, read-only.</p>
-<pre><span class="cmd">curl</span> <span class="str">/stats</span>
+<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217:8777/stats</span>
 <span class="cmt"># {"total_calls":12340,"revenue":1.23,"uptime_rate":0.999}</span></pre>
       </div>
     </section>
@@ -174,7 +298,7 @@
       <h2>Pay with Litecoin</h2>
       <div class="ltc-box">
         <label>LTC Wallet Address — tap to select</label>
-        <div class="addr">LtGCwHYMRm1Jh3pU9jGTaF8KvCfJh8WpQd</div>
+        <div class="addr" id="ltcAddr">Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM</div>
       </div>
       <p class="hint">Send any amount of LTC; fund balance is applied per call. Direct on-chain, no middleman.</p>
     </section>
@@ -189,8 +313,91 @@
     </section>
 
     <footer>
-      MD2HTML API &mdash; autonomous business API. Endpoints: <code>/convert</code> <code>/health</code> <code>/payment</code> <code>/usage</code> <code>/stats</code>. <span class="accent" style="color:var(--accent)">&copy; 2026</span>
+      MD2HTML API &mdash; autonomous business API. Endpoints: <code>/convert</code> <code>/health</code> <code>/docs</code> <code>/payment</code> <code>/usage</code> <code>/stats</code>. <span class="accent" style="color:var(--accent)">&copy; 2026</span>
     </footer>
   </div>
+
+<script>
+  (function () {
+    const API = "http://147.15.103.217:8777";
+    const mdInput   = document.getElementById("mdInput");
+    const htmlOut   = document.getElementById("htmlOutput");
+    const statusEl  = document.getElementById("demoStatus");
+    let timer = null;
+    let seq = 0;
+
+    function setStatus(text, cls) {
+      statusEl.textContent = text;
+      statusEl.className = "status" + (cls ? " " + cls : "");
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, ch => ({
+        "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;"
+      }[ch]));
+    }
+
+    async function runConvert(markdown) {
+      const mySeq = ++seq;
+      setStatus("Converting…", "busy");
+      try {
+        const res = await fetch(API + "/convert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ markdown: markdown })
+        });
+        if (mySeq !== seq) return; // a newer request superseded this one
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          setStatus("HTTP " + res.status + (body ? " — " + body.slice(0, 80) : ""), "err");
+          htmlOut.innerHTML = '<pre style="white-space:pre-wrap;color:#cf222e">HTTP ' + res.status +
+                             (body ? "\n" + escapeHtml(body.slice(0, 300)) : "") + '</pre>';
+          return;
+        }
+        const data = await res.json();
+        if (mySeq !== seq) return;
+        if (data && typeof data.html === "string") {
+          htmlOut.innerHTML = data.html;
+          setStatus("OK — rendered via API.", "ok");
+        } else {
+          htmlOut.textContent = JSON.stringify(data, null, 2);
+          setStatus("OK — unexpected response shape.", "err");
+        }
+      } catch (err) {
+        if (mySeq !== seq) return;
+        setStatus("Network error: " + (err && err.message ? err.message : err), "err");
+        htmlOut.innerHTML = '<pre style="white-space:pre-wrap;color:#cf222e">Could not reach the API at ' +
+                           escapeHtml(API) + '.\nCheck your connection and that the server is online.</pre>';
+      }
+    }
+
+    mdInput.addEventListener("input", function () {
+      clearTimeout(timer);
+      setStatus("Typing…", "busy");
+      timer = setTimeout(function () { runConvert(mdInput.value); }, 350);
+    });
+
+    // initial conversion on page load
+    runConvert(mdInput.value);
+
+    // tap-to-copy LTC address
+    const ltc = document.getElementById("ltcAddr");
+    ltc.addEventListener("click", function () {
+      const txt = ltc.textContent.trim();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () {
+          const orig = ltc.style.color;
+          ltc.style.color = "var(--accent)";
+          setTimeout(function () { ltc.style.color = orig; }, 600);
+        });
+      } else {
+        const r = document.createRange();
+        r.selectNode(ltc);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(r);
+      }
+    });
+  })();
+</script>
 </body>
 </html>
