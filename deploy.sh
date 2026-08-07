@@ -106,48 +106,52 @@ stop() {
         pid="$(cat "$PID_FILE" 2>/dev/null || true)"
     fi
     # 2. On git-bash the recorded PID is the MSYS wrapper; the real Windows
-    #    python.exe listens on the port. Find the PID owning the port and
-    #    kill that too. Works on Linux (ss/lsof) and Windows/MSYS (netstat).
-    local port_pid=""
+    #    python.exe listens on the port. Find the PID(s) owning the port and
+    #    kill those too. Works on Linux (ss/lsof) and Windows/MSYS (netstat).
+    local port_pids=""
     if command -v ss >/dev/null 2>&1; then
-        port_pid="$(ss -ltnp 2>/dev/null | grep ":${PORT} " | grep -oP 'pid=\K[0-9]+' | head -1 || true)"
+        port_pids="$(ss -ltnp 2>/dev/null | grep ":${PORT} " | grep -oP 'pid=\K[0-9]+' || true)"
     elif command -v lsof >/dev/null 2>&1; then
-        port_pid="$(lsof -ti tcp:"${PORT}" -sTCP:LISTEN 2>/dev/null | head -1 || true)"
+        port_pids="$(lsof -ti tcp:"${PORT}" -sTCP:LISTEN 2>/dev/null || true)"
     elif command -v netstat >/dev/null 2>&1; then
         # Windows netstat: "...LISTENING  <pid>"
-        port_pid="$(netstat -ano 2>/dev/null | grep ":${PORT} .*LISTENING" | awk '{print $NF}' | head -1 || true)"
+        port_pids="$(netstat -ano 2>/dev/null | grep ":${PORT} .*LISTENING" | awk '{print $NF}' || true)"
     fi
-    if [ -z "$pid" ] && [ -z "$port_pid" ]; then
+    if [ -z "$pid" ] && [ -z "$port_pids" ]; then
         echo "Server not running."
         rm -f "$PID_FILE" 2>/dev/null || true
         return 0
     fi
-    if [ -n "$pid" ]; then
-        echo "Stopping PID $pid ..."
-        kill "$pid" 2>/dev/null || true
-        for i in $(seq 1 5); do
-            kill -0 "$pid" 2>/dev/null || break
-            sleep 1
-        done
-        kill -9 "$pid" 2>/dev/null || true
-    fi
-    # Also kill the actual port owner (handles git-bash wrapper-vs-child case).
-    if [ -n "$port_pid" ] && [ "$port_pid" != "$pid" ]; then
-        echo "Stopping port-owner PID $port_pid ..."
-        kill "$port_pid" 2>/dev/null || true
+    # Build the union of PIDs to kill (recorded PID + all port owners).
+    local to_kill="$pid"
+    local pp
+    for pp in $port_pids; do
+        [ "$pp" = "$pid" ] || to_kill="$to_kill $pp"
+    done
+    # MSYS path-translation mangles /PID -> //PID; disable it for taskkill.
+    local _msys_noconv="${MSYS_NO_PATHCONV:-}"
+    export MSYS_NO_PATHCONV=1
+    for p in $to_kill; do
+        [ -n "$p" ] || continue
+        echo "Stopping PID $p ..."
+        kill "$p" 2>/dev/null || true
         sleep 1
-        # On Windows MSYS, kill -9 may not reach a non-child native process;
-        # fall back to taskkill if present.
+        kill -9 "$p" 2>/dev/null || true
+        # On Windows MSYS, kill may not reach a non-child native process;
+        # fall back to taskkill (native Windows) if present.
         if command -v taskkill >/dev/null 2>&1; then
-            taskkill //PID "$port_pid" //F >/dev/null 2>&1 || true
-            taskkill //PID "$port_pid" //T //F >/dev/null 2>&1 || true
+            taskkill /PID "$p" /T /F >/dev/null 2>&1 || true
         fi
-        kill -9 "$port_pid" 2>/dev/null || true
+    done
+    # Final resolve: powershell Stop-Process (Windows) for stragglers.
+    if command -v powershell >/dev/null 2>&1; then
+        for p in $to_kill; do
+            [ -n "$p" ] || continue
+            powershell -Command "Stop-Process -Id $p -Force -ErrorAction SilentlyContinue" 2>/dev/null || true
+        done
     fi
-    # Final resolve: use powershell Stop-Process on Windows if still alive.
-    if command -v powershell >/dev/null 2>&1 && [ -n "$port_pid" ]; then
-        powershell -Command "Stop-Process -Id $port_pid -Force -ErrorAction SilentlyContinue" 2>/dev/null || true
-    fi
+    # Restore prior env.
+    if [ -n "$_msys_noconv" ]; then export MSYS_NO_PATHCONV="$_msys_noconv"; else unset MSYS_NO_PATHCONV; fi
     rm -f "$PID_FILE" 2>/dev/null || true
     echo "Stopped."
 }

@@ -1,0 +1,56 @@
+{
+  "balance": 0.0,
+  "blocked": [
+    {
+      "item": "deploy_to_vps",
+      "reason": "Landing page references localhost:8777 not public URL; VPS deploy not done",
+      "since": "2026-08-07T02:30:00+00:00"
+    },
+    {
+      "item": "public_distribution",
+      "reason": "No SEO, no backlinks, no community posts. Zero real users.",
+      "since": "2026-08-07T02:30:00+00:00"
+    }
+  ],
+  "costs": {
+    "model_tokens_7d": 0.0,
+    "vps_monthly": 0.0
+  },
+  "last_report": "2026-08-06T20:50:55-03:00",
+  "metrics": {
+    "landing_views": 0,
+    "real_revenue_ltc": 0.0,
+    "total_api_calls": 60,
+    "unique_real_users": 0
+  },
+  "notes": "Stage 1 validation. Free-tier model. Server was DOWN this wake - restarted. All 60 API calls localhost. Zero real users. TOP PRIORITY: distribution.",
+  "primitives": {
+    "coinbase_cdp": false,
+    "deploy_vps": false,
+    "github": true,
+    "github_auth": true,
+    "ltc_wallet": true,
+    "polymarket": false,
+    "stripe": false,
+    "task_market": false
+  },
+  "product": {
+    "billing": "10 free calls then 402 + LTC wallet",
+    "endpoints": [
+      "/convert",
+      "/health",
+      "/docs",
+      "/payment",
+      "/usage",
+      "/stats"
+    ],
+    "local_dir": "~/autonomous-business-product",
+    "name": "MD2HTML API",
+    "port": 8777,
+    "repo": "github.com/dcn13l/md2html-api",
+    "wallet": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM"
+  },
+  "revenue_7d": 0.0,
+  "started": "2026-08-07T01:22:56+00:00",
+  "tz": "America/Sao_Paulo"
+}

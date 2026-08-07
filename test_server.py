@@ -12,6 +12,7 @@ import urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SERVER = os.path.join(HERE, "server.py")
+USAGE_FILE = os.path.join(HERE, "usage.json")
 HOST = "localhost"
 PORT = 8777
 BASE = f"http://{HOST}:{PORT}"
@@ -22,6 +23,14 @@ def record(name, passed, detail=""):
     results.append((name, passed, detail))
     tag = "PASS" if passed else "FAIL"
     print(f"[{tag}] {name}" + (f" - {detail}" if detail else ""))
+
+def reset_usage():
+    """Wipe usage.json so the free-tier billing bucket is clean for tests."""
+    try:
+        with open(USAGE_FILE, "w") as f:
+            json.dump({}, f)
+    except Exception:
+        pass
 
 def port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -64,6 +73,19 @@ def post_convert(md):
         payload = json.loads(r.read().decode("utf-8"))
     return status, payload
 
+def options_preflight():
+    """Send an OPTIONS preflight request; return (status, headers_dict)."""
+    req = urllib.request.Request(
+        f"{BASE}/convert",
+        data=b"",
+        method="OPTIONS",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as r:
+            return r.status, dict(r.headers)
+    except urllib.error.HTTPError as e:
+        return e.code, dict(e.headers)
+
 def get_health():
     with urllib.request.urlopen(f"{BASE}/health", timeout=5) as r:
         status = r.status
@@ -77,6 +99,9 @@ def main():
         passed = sum(1 for _, p, _ in results if p)
         print(f"\n{passed}/{len(results)} tests passed")
         return 1
+
+    # Reset billing usage so free-tier isn't exhausted by prior runs
+    reset_usage()
 
     # 1) Start server in background
     proc = subprocess.Popen(
@@ -130,6 +155,48 @@ def main():
             record("GET /health returns status ok", health_ok, f"status={status} body={payload}")
         except Exception as e:
             record("GET /health returns status ok", False, f"{type(e).__name__}: {e}")
+
+        # 5) POST /convert with empty markdown
+        try:
+            status, payload = post_convert("")
+            html = payload.get("html", "")
+            # Empty markdown should yield 200 and empty (or whitespace-only) HTML
+            empty_ok = (status == 200) and (html.strip() == "")
+            record("POST /convert empty markdown returns 200 with empty html",
+                   empty_ok, f"status={status} html={html!r}")
+        except Exception as e:
+            record("POST /convert empty markdown returns 200 with empty html",
+                   False, f"{type(e).__name__}: {e}")
+
+        # 6) POST /convert with code block containing HTML special chars
+        try:
+            md_code = "```python\nx = '<script>alert(\"xss\")</script>' & y > 0\n```"
+            status, payload = post_convert(md_code)
+            html = payload.get("html", "")
+            # Code content must be escaped: literal <script> absent, escaped
+            # <script> present, and the and > entities appear.
+            escaped_ok = (status == 200) and ("<pre><code>" in html) and \
+                         ("<script>" not in html) and ("&lt;script&gt;" in html) and \
+                         ("&amp;" in html) and ("&gt;" in html)
+            record("POST /convert code block escapes HTML special chars",
+                   escaped_ok, f"status={status} html={html!r}")
+        except Exception as e:
+            record("POST /convert code block escapes HTML special chars",
+                   False, f"{type(e).__name__}: {e}")
+
+        # 7) OPTIONS preflight returns CORS headers
+        try:
+            status, headers = options_preflight()
+            # Status should be 200 (or 204); CORS headers must be present
+            cors_ok = (status in (200, 204)) and \
+                      (headers.get("Access-Control-Allow-Origin") == "*") and \
+                      ("Access-Control-Allow-Methods" in headers) and \
+                      ("Access-Control-Allow-Headers" in headers)
+            record("OPTIONS preflight returns CORS headers",
+                   cors_ok, f"status={status} ACAO={headers.get('Access-Control-Allow-Origin')}")
+        except Exception as e:
+            record("OPTIONS preflight returns CORS headers",
+                   False, f"{type(e).__name__}: {e}")
 
     finally:
         # 5) Clean up server

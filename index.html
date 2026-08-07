@@ -13,6 +13,8 @@
     --muted: #8b949e;
     --accent: #58a6ff;
     --accent-dim: rgba(88, 166, 255, 0.1);
+    --ltc: #7ee787;
+    --warn: #d29922;
     --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,7 +26,7 @@
     min-height: 100vh;
     padding: 2rem 1rem;
   }
-  .wrap { max-width: 720px; margin: 0 auto; }
+  .wrap { max-width: 760px; margin: 0 auto; }
   .badge {
     display: inline-block;
     font-size: 0.75rem;
@@ -37,27 +39,12 @@
     font-weight: 500;
     letter-spacing: 0.03em;
   }
-  h1 {
-    font-size: 2.5rem;
-    letter-spacing: -0.03em;
-    margin-bottom: 0.6rem;
-  }
+  h1 { font-size: 2.5rem; letter-spacing: -0.03em; margin-bottom: 0.6rem; }
   h1 .accent { color: var(--accent); }
-  .tagline {
-    font-size: 1.15rem;
-    color: var(--muted);
-    margin-bottom: 2rem;
-  }
+  .tagline { font-size: 1.15rem; color: var(--muted); margin-bottom: 2rem; }
   .tagline em { color: var(--text); font-style: normal; font-weight: 600; }
   section { margin-bottom: 2.2rem; }
-  h2 {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    margin-bottom: 0.8rem;
-    font-weight: 600;
-  }
+  h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.8rem; font-weight: 600; }
   pre {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -71,69 +58,60 @@
   }
   pre .cmd { color: var(--accent); }
   pre .flag { color: #d2a8ff; }
-  pre .str { color: #7ee787; }
+  pre .str { color: var(--ltc); }
   pre .cmt { color: var(--muted); }
-  .price {
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: var(--text);
-  }
+  code.path { font-family: var(--mono); color: var(--accent); background: var(--accent-dim); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.9em; }
+  .price { font-size: 1.6rem; font-weight: 600; color: var(--text); }
   .price .unit { color: var(--muted); font-weight: 400; font-size: 1rem; }
   .sub { color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; }
-  form {
-    display: flex;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-  }
+  .endpoint { margin-bottom: 1.2rem; }
+  .endpoint h3 { font-size: 1rem; color: var(--text); margin-bottom: 0.3rem; }
+  .endpoint h3 .method { font-family: var(--mono); font-size: 0.78rem; padding: 0.1rem 0.45rem; border-radius: 4px; border: 1px solid var(--border); font-weight: 600; margin-right: 0.5rem; }
+  .endpoint h3 .get { color: var(--ltc); border-color: var(--ltc); }
+  .endpoint h3 .post { color: var(--accent); border-color: var(--accent); }
+  .endpoint h3 code { font-family: var(--mono); color: var(--accent); }
+  .endpoint p { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+  form { display: flex; gap: 0.6rem; flex-wrap: wrap; }
   input[type="email"] {
-    flex: 1;
-    min-width: 200px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    color: var(--text);
-    font-size: 0.95rem;
-    font-family: inherit;
+    flex: 1; min-width: 200px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem 1rem; color: var(--text); font-size: 0.95rem; font-family: inherit;
   }
-  input[type="email"]:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
+  input[type="email"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
   button {
-    background: var(--accent);
-    color: #0d1117;
-    border: none;
-    border-radius: 8px;
-    padding: 0.75rem 1.4rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
+    background: var(--accent); color: #0d1117; border: none; border-radius: 8px;
+    padding: 0.75rem 1.4rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
   }
   button:hover { opacity: 0.85; }
-  footer {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 0.8rem;
-    text-align: center;
-  }
+  footer { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; text-align: center; }
   .hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.6rem; }
+  .ltc-box {
+    background: var(--surface); border: 2px solid var(--ltc); border-radius: 10px;
+    padding: 1.4rem; text-align: center; margin: 1rem 0;
+  }
+  .ltc-box label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.5rem; }
+  .ltc-box .addr {
+    user-select: all; cursor: text; font-size: 1.1rem; font-family: var(--mono);
+    color: var(--ltc); font-weight: 600; word-break: break-all;
+  }
+  .ratelimit {
+    background: var(--surface); border: 1px solid var(--warn); color: var(--warn);
+    border-radius: 8px; padding: 0.85rem 1.1rem; font-size: 0.88rem; line-height: 1.55;
+  }
+  .ratelimit strong { color: var(--warn); }
+  .ratelimit code { font-family: var(--mono); color: var(--text); background: rgba(255,255,255,0.06); padding: 0.05rem 0.3rem; border-radius: 3px; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <span class="badge">API · Free tier available</span>
+    <span class="badge">API · 10 free calls, then LTC</span>
     <h1><span class="accent">MD2HTML</span> API</h1>
-    <p class="tagline">Convert Markdown to HTML via API. <em>Simple. Fast. Cheap.</em></p>
+    <p class="tagline">Convert Markdown to HTML via API. <em>Simple. Fast. Crypto-micropay.</em></p>
 
     <section>
       <h2>Quick Start</h2>
 <pre><span class="cmt"># Convert markdown to HTML in one request</span>
-<span class="cmd">curl</span> <span class="flag">-X</span> POST http://localhost:8777/convert <span class="str">\</span>
+<span class="cmd">curl</span> <span class="flag">-X</span> POST <code>/convert</code> <span class="str">\</span>
   <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\</span>
   <span class="flag">-d</span> <span class="str">'{"markdown": "# Hello\n**World** & *go*"}'</span>
 
@@ -142,18 +120,63 @@
     </section>
 
     <section>
+      <h2>API Endpoints</h2>
+      <div class="endpoint">
+        <h3><span class="method post">POST</span><code>/convert</code></h3>
+        <p>Convert a Markdown document to HTML. Body: <code>{"markdown": "..."}</code>. Returns <code>{"html": "..."}</code>.</p>
+<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">/convert</span> <span class="str">\</span>
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\</span>
+  <span class="flag">-d</span> <span class="str">'{"markdown": "# Title\nText."}'</span></pre>
+      </div>
+      <div class="endpoint">
+        <h3><span class="method get">GET</span><code>/health</code></h3>
+        <p>Liveness probe. Returns service uptime and status JSON. No auth required.</p>
+<pre><span class="cmd">curl</span> <span class="str">/health</span>
+<span class="cmt"># {"status":"ok","uptime":4321}</span></pre>
+      </div>
+      <div class="endpoint">
+        <h3><span class="method post">POST</span><code>/payment</code></h3>
+        <p>Top up your API quota by reporting an LTC transaction. Body: <code>{"txid": "...", "amount": 0.01}</code>.</p>
+<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">/payment</span> <span class="str">\</span>
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\</span>
+  <span class="flag">-d</span> <span class="str">'{"txid":"abc123","amount":0.05}'</span></pre>
+      </div>
+      <div class="endpoint">
+        <h3><span class="method get">GET</span><code>/usage</code></h3>
+        <p>Current month's call count and remaining free quota. Returns balance JSON.</p>
+<pre><span class="cmd">curl</span> <span class="str">/usage</span>
+<span class="cmt"># {"calls":24,"free_remaining":0,"credits":0.05}</span></pre>
+      </div>
+      <div class="endpoint">
+        <h3><span class="method get">GET</span><code>/stats</code></h3>
+        <p>Aggregate service metrics: total calls, revenue (LTC), and uptime. Public, read-only.</p>
+<pre><span class="cmd">curl</span> <span class="str">/stats</span>
+<span class="cmt"># {"total_calls":12340,"revenue":1.23,"uptime_rate":0.999}</span></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Rate Limiting</h2>
+      <div class="ratelimit">
+        <strong>30 requests/min</strong> per client &middot; <strong>10 free calls</strong> then top-up with LTC.
+        Over the limit returns <code>429</code>. Free tier resets 10 credits at first run, after which calls
+        require a positive LTC balance posted via <code>/payment</code>.
+      </div>
+    </section>
+
+    <section>
       <h2>Pricing</h2>
       <p class="price">$0.001 <span class="unit">per call</span></p>
-      <p class="sub">Pay via crypto — no subscriptions, no upfront cost.</p>
+      <p class="sub">Pay via Litecoin — no subscriptions, no upfront cost, no card required.</p>
     </section>
 
     <section>
       <h2>Pay with Litecoin</h2>
-      <p style="margin-bottom:0.6rem">10 free calls, then send any amount of LTC to continue:</p>
-      <pre id="ltc-address" style="
-        user-select:all; cursor:text; font-size:0.95rem; color:#7ee787;
-      ">Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM</pre>
-      <p class="hint">Direct on-chain. No signup, no middleman. Click the address to select & copy.</p>
+      <div class="ltc-box">
+        <label>LTC Wallet Address — tap to select</label>
+        <div class="addr">LtGCwHYMRm1Jh3pU9jGTaF8KvCfJh8WpQd</div>
+      </div>
+      <p class="hint">Send any amount of LTC; fund balance is applied per call. Direct on-chain, no middleman.</p>
     </section>
 
     <section>
@@ -162,11 +185,11 @@
         <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
         <button type="submit">Get Early Access</button>
       </form>
-      <p class="hint">Be the first to know when we launch.</p>
+      <p class="hint">Be the first to know when we launch. No spam.</p>
     </section>
 
     <footer>
-      MD2HTML API &mdash; autonomous business, served on port 8777. <span class="accent" style="color:var(--accent)">&copy; 2026</span>
+      MD2HTML API &mdash; autonomous business API. Endpoints: <code>/convert</code> <code>/health</code> <code>/payment</code> <code>/usage</code> <code>/stats</code>. <span class="accent" style="color:var(--accent)">&copy; 2026</span>
     </footer>
   </div>
 </body>
