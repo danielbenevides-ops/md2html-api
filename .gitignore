@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+usage.json
+analytics.json
+uptime.json
+wallet.json
