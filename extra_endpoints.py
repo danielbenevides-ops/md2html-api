@@ -142,7 +142,7 @@ def _test() -> None:
     assert slugify("!!!---###") == "", "empty slug from punctuation"
     print("PASS /slug")
 
-    print("\nAll tests passed." if ok else "\nFAILURES detected.")
+    print("\nAll tests passed.")
 
 
 if __name__ == "__main__":

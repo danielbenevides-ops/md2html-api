@@ -3,6 +3,7 @@ Stdlib only. Run: python server.py"""
 import http.server, json, re, os, time, threading
 from billing import record_call, FREE_TIER_LIMIT
 from analytics import log_call, get_stats, daily_report
+from extra_endpoints import HANDLERS as ENDPOINT_HANDLERS  # /json/prettify, /text/stats, /slug
 
 PORT = 8777
 VERSION = "1.1.0"  # bumped for hardening pass (health detail, CORS preflight, edge cases)
@@ -111,6 +112,21 @@ POST /convert
   Supported: headings, bold, italic, links, inline/block code, unordered lists.
   Free tier: 10 calls per IP. Then 402 + LTC wallet address.
 
+POST /json/prettify
+  Body: application/json {"json": "<compact JSON string>"}
+  Returns: the input JSON re-indented with 2-space pretty printing,
+           plus a "billing" object. 400 on invalid JSON.
+
+POST /text/stats
+  Body: application/json {"text": "<any text>"}
+  Returns: {"words": N, "chars": N, "chars_no_spaces": N,
+            "reading_time_min": float, "top_words": [[word, count], ...],
+            "billing": {...}}
+
+POST /slug
+  Body: application/json {"title": "<title string>"}
+  Returns: {"slug": "<url-safe-slug>", "billing": {...}}
+
 GET /health   -> {"status":"ok","version":"...","uptime_seconds":N,"port":8777,...}
 GET /docs     -> this guide
 GET /payment  -> {"wallet_address": "...", "currency": "LTC"}
@@ -118,9 +134,13 @@ GET /usage    -> {"calls_made": N, "remaining": N}
 GET /stats    -> {"total_calls": N, "unique_ips": N, ...}
 
 Rate limit: 30 requests/minute per IP. Max body: 1MB.
+All POST endpoints share the same free tier (10 calls/IP) and billing.
 
 Examples:
   curl -X POST http://localhost:8777/convert -H "Content-Type: application/json" -d '{"markdown": "# Hello **world**"}'
+  curl -X POST http://localhost:8777/json/prettify -H "Content-Type: application/json" -d '{"json":"{\\"a\\":1,\\"b\\":2}"}'
+  curl -X POST http://localhost:8777/text/stats -H "Content-Type: application/json" -d '{"text":"The quick brown fox"}'
+  curl -X POST http://localhost:8777/slug -H "Content-Type: application/json" -d '{"title":"Café — Menus & Drinks!"}'
   curl http://localhost:8777/health
   curl http://localhost:8777/payment
 """
@@ -180,7 +200,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     "uptime": f"{int(uptime // 86400)}d {int((uptime % 86400) // 3600)}h {int((uptime % 3600) // 60)}m {int(uptime % 60)}s",
                     "port": PORT,
                     "timestamp": int(time.time()),
-                    "endpoints": ["/health", "/convert", "/docs", "/payment", "/usage", "/stats"]
+                    "endpoints": ["/health", "/convert", "/json/prettify", "/text/stats", "/slug", "/docs", "/payment", "/usage", "/stats"]
                 }))
                 log_call("/health", client_ip, 200, time.time() - t0)
             elif self.path == "/docs":
@@ -222,80 +242,131 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send(500, json.dumps({"error": "internal server error"}))
             log_call(self.path, client_ip, 500, time.time() - t0)
 
+    # JSON body field name expected by each extra endpoint.
+    _EXTRA_BODY_FIELD = {
+        "/json/prettify": "json",
+        "/text/stats": "text",
+        "/slug": "title",
+    }
+
+    def _read_body(self):
+        """Read and enforce the body cap. Returns (raw_str, error_json_str) or
+        (None, 404) if no Content-Length. On failure error_json_str is set and
+        raw is None. Caller must log the supplied status."""
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except (TypeError, ValueError):
+            return None, 400, json.dumps({"error": "Invalid Content-Length"})
+        if length <= 0:
+            return None, 400, json.dumps({"error": "Empty request body",
+                                          "message": "POST a non-empty body. See /docs for usage."})
+        if length > MAX_BODY:
+            return None, 413, json.dumps({"error": "Request body too large",
+                                          "max_bytes": MAX_BODY,
+                                          "message": f"Body exceeds the {MAX_BODY}-byte limit."})
+        return self.rfile.read(length).decode("utf-8", errors="replace"), 200, None
+
     def do_POST(self):
         client_ip = self.client_address[0]
         t0 = time.time()
+        path = self.path
         try:
             # Rate limit check
             if not rate_check(client_ip):
                 self.send(429, json.dumps({"error": "Rate limit exceeded", "retry_after": RATE_LIMIT_WINDOW}))
-                log_call(self.path, client_ip, 429, time.time() - t0)
+                log_call(path, client_ip, 429, time.time() - t0)
                 return
 
-            if self.path != "/convert":
-                self.send(404, json.dumps({"error": "not found"}))
-                log_call(self.path, client_ip, 404, time.time() - t0)
-                return
-
-            # Body cap (anti-OOM) — reject BEFORE billing so oversized
-            # requests are not charged, and guard against malformed CL.
-            try:
-                length = int(self.headers.get("Content-Length", 0))
-            except (TypeError, ValueError):
-                self.send(400, json.dumps({"error": "Invalid Content-Length"}))
-                log_call("/convert", client_ip, 400, time.time() - t0)
-                return
-            if length <= 0:
-                self.send(400, json.dumps({
-                    "error": "Empty request body",
-                    "message": "POST a markdown string to /convert. See /docs for usage."
-                }))
-                log_call("/convert", client_ip, 400, time.time() - t0)
-                return
-            if length > MAX_BODY:
-                self.send(413, json.dumps({
-                    "error": "Request body too large",
-                    "max_bytes": MAX_BODY,
-                    "message": f"Body exceeds the {MAX_BODY}-byte limit. Split or trim your input."
-                }))
-                log_call("/convert", client_ip, 413, time.time() - t0)
-                return
-
-            # Billing check (only after request passes validation)
-            bill = record_call(client_ip)
-            if bill.get("status") == 402:
-                self.send(402, json.dumps(bill))
-                log_call("/convert", client_ip, 402, time.time() - t0)
-                return
-
-            raw = self.rfile.read(length).decode("utf-8", errors="replace")
-            if self.headers.get("Content-Type", "").startswith("application/json"):
-                try:
-                    md = json.loads(raw).get("markdown", raw)
-                    if not isinstance(md, str):
-                        md = str(md)
-                except Exception:
+            # ---- /convert: markdown -> HTML ---------------------------------
+            if path == "/convert":
+                raw, status, err = self._read_body()
+                if raw is None:
+                    self.send(status, err)
+                    log_call(path, client_ip, status, time.time() - t0)
+                    return
+                # Billing check (only after body validation)
+                bill = record_call(client_ip)
+                if bill.get("status") == 402:
+                    self.send(402, json.dumps(bill))
+                    log_call(path, client_ip, 402, time.time() - t0)
+                    return
+                if self.headers.get("Content-Type", "").startswith("application/json"):
+                    try:
+                        md = json.loads(raw).get("markdown", raw)
+                        if not isinstance(md, str):
+                            md = str(md)
+                    except Exception:
+                        md = raw
+                else:
                     md = raw
-            else:
-                md = raw
-
-            # Empty markdown after parsing — return empty HTML with a hint.
-            # Still counts as a call (already billed above).
-            if md is None or (isinstance(md, str) and md.strip() == ""):
-                self.send(200, json.dumps({
-                    "html": "",
-                    "warning": "Empty markdown input — no HTML generated.",
-                    "billing": bill
-                }))
-                log_call("/convert", client_ip, 200, time.time() - t0)
+                if md is None or (isinstance(md, str) and md.strip() == ""):
+                    self.send(200, json.dumps({
+                        "html": "",
+                        "warning": "Empty markdown input — no HTML generated.",
+                        "billing": bill
+                    }))
+                    log_call(path, client_ip, 200, time.time() - t0)
+                    return
+                html = md_to_html(md)
+                self.send(200, json.dumps({"html": html, "billing": bill}))
+                log_call(path, client_ip, 200, time.time() - t0)
                 return
 
-            html = md_to_html(md)
-            self.send(200, json.dumps({"html": html, "billing": bill}))
-            log_call("/convert", client_ip, 200, time.time() - t0)
+            # ---- extra endpoints: /json/prettify, /text/stats, /slug --------
+            if path in ENDPOINT_HANDLERS:
+                raw, status, err = self._read_body()
+                if raw is None:
+                    self.send(status, err)
+                    log_call(path, client_ip, status, time.time() - t0)
+                    return
+                # Billing check
+                bill = record_call(client_ip)
+                if bill.get("status") == 402:
+                    self.send(402, json.dumps(bill))
+                    log_call(path, client_ip, 402, time.time() - t0)
+                    return
+                # Extract the named field from a JSON body, fall back to raw.
+                field = self._EXTRA_BODY_FIELD.get(path, "text")
+                if self.headers.get("Content-Type", "").startswith("application/json"):
+                    try:
+                        body_text = json.loads(raw).get(field, raw)
+                        if not isinstance(body_text, str):
+                            body_text = str(body_text)
+                    except Exception:
+                        body_text = raw
+                else:
+                    body_text = raw
+                if body_text is None or body_text.strip() == "":
+                    self.send(400, json.dumps({
+                        "error": f"Empty '{field}' field",
+                        "message": f"POST a JSON object with a non-empty '{field}' string. See /docs for usage."
+                    }))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                try:
+                    result = ENDPOINT_HANDLERS[path](body_text)
+                except ValueError as ve:
+                    self.send(400, json.dumps({"error": "Bad input", "message": str(ve)}))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                # /slug returns a bare slug; the others return JSON objects.
+                if path == "/slug":
+                    self.send(200, json.dumps({"slug": result, "billing": bill}))
+                else:
+                    # Wrap the handler's JSON string back into an object so we
+                    # can attach billing uniformly.
+                    obj = json.loads(result)
+                    obj["billing"] = bill
+                    self.send(200, json.dumps(obj, ensure_ascii=False))
+                log_call(path, client_ip, 200, time.time() - t0)
+                return
+
+            # Unknown POST path
+            self.send(404, json.dumps({"error": "not found"}))
+            log_call(path, client_ip, 404, time.time() - t0)
         except Exception:
             self.send(500, json.dumps({"error": "internal server error"}))
-            log_call("/convert", client_ip, 500, time.time() - t0)
+            log_call(path, client_ip, 500, time.time() - t0)
 
 if __name__ == "__main__":
     print(f"Markdown-to-HTML API on http://0.0.0.0:{PORT}")
