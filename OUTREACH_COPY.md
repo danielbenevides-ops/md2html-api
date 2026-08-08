@@ -1,6 +1,6 @@
 # MD2HTML API — Outreach Copy
 
-API base URL: `http://147.15.103.217:8777`
+API base URL: `http://147.15.103.217/md2html`
 GitHub: <https://github.com/dcn13l/md2html-api>
 Pricing: 10 free calls, then pay per call via Litecoin
 
@@ -19,7 +19,7 @@ I kept bolting markdown parsers into every side project (docs, blogs, CMS input)
 **How it works:**
 
 ```bash
-curl -X POST http://147.15.103.217:8777/convert \
+curl -X POST http://147.15.103.217/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello\n\nThis is **bold** and this is [a link](https://example.com)."}'
 ```
@@ -36,7 +36,7 @@ That's the whole thing. One POST to `/convert`, JSON in, JSON out.
 
 **Details:**
 
-- **Endpoint:** `POST http://147.15.103.217:8777/convert`
+- **Endpoint:** `POST http://147.15.103.217/md2html/convert`
 - **10 free calls** to try it, then pay per call via Litecoin — no signup wall, no monthly plan
 - **Use cases:** CMS input sanitization, docs builds, email templates, AI output rendering, anywhere you'd rather not ship a parser dependency
 - **Source:** <https://github.com/dcn13l/md2html-api>
@@ -57,14 +57,14 @@ Hey HN — I built a small markdown-to-HTML API after one too many times bolting
 
 **Problem it solves:** every side project that touches markdown ends up pulling in a parser library (and its transitive deps) just to render a snippet. The cost is trivial in isolation, but the surface area adds up: bundle size, CSP, spec-compliance drift, and a parser sitting in the trust boundary when the markdown is untrusted (CMS, user content, AI output). MD2HTML factors that into a single HTTP call.
 
-- **Endpoint:** `POST http://147.15.103.217:8777/convert`
+- **Endpoint:** `POST http://147.15.103.217/md2html/convert`
 - **Pricing:** 10 free calls, then pay per call via Litecoin — no monthly fee, no card on file
 - **Source (open):** <https://github.com/dcn13l/md2html-api>
 
 Example:
 
 ```bash
-curl -X POST http://147.15.103.217:8777/convert \
+curl -X POST http://147.15.103.217/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "**hi**"}'
 # -> {"html":"<p><strong>hi</strong></p>"}
@@ -91,7 +91,7 @@ So I built **MD2HTML API** — a tiny HTTP service that turns markdown into clea
 One endpoint:
 
 ```
-POST http://147.15.103.217:8777/convert
+POST http://147.15.103.217/md2html/convert
 ```
 
 Send JSON with a `markdown` field, get JSON back with an `html` field. That's it.
@@ -103,7 +103,7 @@ Send JSON with a `markdown` field, get JSON back with an `html` field. That's it
 ### Quick test
 
 ```bash
-curl -X POST http://147.15.103.217:8777/convert \
+curl -X POST http://147.15.103.217/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Title\n\n- one\n- two\n- three"}'
 ```
@@ -120,7 +120,7 @@ Here's a real example — converting a markdown blob to HTML before saving to a 
 
 ```js
 async function convertMarkdown(markdown) {
-  const res = await fetch("http://147.15.103.217:8777/convert", {
+  const res = await fetch("http://147.15.103.217/md2html/convert", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ markdown }),
@@ -169,7 +169,7 @@ Use MD2HTML when you want render-as-a-service instead of shipping a parser:
 
 ### Try it
 
-- API: <http://147.15.103.217:8777>
+- API: <http://147.15.103.217/md2html>
 - Source & docs: <https://github.com/dcn13l/md2html-api>
 
 If you'd want a different option (sanitize-only mode, syntax highlighting hooks, custom renderer config), open an issue on the repo — I'm actively iterating on what the endpoint should expose.
@@ -180,7 +180,7 @@ If you'd want a different option (sanitize-only mode, syntax highlighting hooks,
 
 | Item | Value |
 |---|---|
-| API base | `http://147.15.103.217:8777` |
+| API base | `http://147.15.103.217/md2html` |
 | Endpoint | `POST /convert` |
 | Request | `{"markdown": "..."}` |
 | Response | `{"html": "..."}` |

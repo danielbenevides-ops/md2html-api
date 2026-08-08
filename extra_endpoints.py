@@ -95,6 +95,12 @@ def slugify(body: str) -> str:
     """
     # Decompose accents, drop combining marks, keep ASCII.
     normalized = unicodedata.normalize("NFKD", body)
+    with open("slug_debug.log", "a") as _log:
+        _log.write(f"INPUT: {body!r}\nNFKD: {normalized!r}\n")
+        for _ch in body:
+            _log.write(f"  INPUT_CHAR {repr(_ch)} U+{ord(_ch):04X} {unicodedata.name(_ch, '?')}\n")
+        for _ch in normalized:
+            _log.write(f"  NFKD_CHAR {repr(_ch)} U+{ord(_ch):04X} {unicodedata.name(_ch, '?')}\n")
     ascii_only = normalized.encode("ascii", "ignore").decode("ascii")
     lowered = ascii_only.lower()
     # Replace any run of non-alphanumeric chars with one hyphen.

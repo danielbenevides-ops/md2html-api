@@ -4,7 +4,7 @@
 
 Static site generators (SSGs) like Hugo, Jekyll, Eleventy, and Astro have transformed how developers publish content to the web. Write Markdown, run a build step, ship static HTML — fast, cheap, and secure. But as content pipelines grow more distributed (headless CMSes, GitHub-backed docs, user-submitted posts, multi-tenant authoring tools), the humble "compile Markdown to HTML" step starts to sprawl across services, languages, and runtime environments.
 
-That's where a dedicated **markdown to html api** earns its keep. Instead of bundling a Markdown parser into every microservice, CI job, edge function, and client app, you call one HTTP endpoint and get back clean HTML. This post walks through why that matters, when to reach for an API instead of a library, and how the [MD2HTML API](http://147.15.103.217:8777) fits into a static-site workflow.
+That's where a dedicated **markdown to html api** earns its keep. Instead of bundling a Markdown parser into every microservice, CI job, edge function, and client app, you call one HTTP endpoint and get back clean HTML. This post walks through why that matters, when to reach for an API instead of a library, and how the [MD2HTML API](http://147.15.103.217/md2html) fits into a static-site workflow.
 
 ## The problem with parsing Markdown everywhere
 
@@ -21,10 +21,10 @@ Bundling a parser in each of those environments means reproducing configuration 
 
 A **markdown to html api** collapses those parsers to a single service. Every client — regardless of language or runtime — POSTs Markdown to the same URL and gets the same HTML back. Configuration lives in one place. Behavior is consistent. Upgrades are atomic.
 
-The [MD2HTML API](http://147.15.103.217:8777) is a lightweight example. You send Markdown to `POST /convert`, and it returns HTML:
+The [MD2HTML API](http://147.15.103.217/md2html) is a lightweight example. You send Markdown to `POST /convert`, and it returns HTML:
 
 ```bash
-curl -X POST http://147.15.103.217:8777/convert \
+curl -X POST http://147.15.103.217/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello\n\nThis is **bold** and _italic_.\n\n```python\nprint(\"hi\")\n```"}'
 ```
@@ -43,7 +43,7 @@ From Python:
 import requests
 
 resp = requests.post(
-    "http://147.15.103.217:8777/convert",
+    "http://147.15.103.217/md2html/convert",
     json={"markdown": "# Title\n\nSome content with [a link](https://example.com)."}
 )
 print(resp.json()["html"])
@@ -52,7 +52,7 @@ print(resp.json()["html"])
 From Node.js:
 
 ```javascript
-const res = await fetch("http://147.15.103.217:8777/convert", {
+const res = await fetch("http://147.15.103.217/md2html/convert", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ markdown: "# Title\n\nHello **world**." })
@@ -92,5 +92,5 @@ For a single Hugo blog, the bundled parser is all you need. The moment Markdown 
 
 **Links**
 
-- API: <http://147.15.103.217:8777>
+- API: <http://147.15.103.217/md2html>
 - Source: <https://github.com/dcn13l/md2html-api>

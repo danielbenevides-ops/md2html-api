@@ -9,7 +9,7 @@ When you reach that point, you have two real options:
 1. Bundle a Markdown parser into every service that needs one, in whatever language each service is written in, and accept the configuration drift.
 2. Stand up one HTTP service that does the conversion and call it from everywhere.
 
-Option 2 is what [MD2HTML](http://147.15.103.217:8777) is. This guide shows how to use it, how to self-host it, and where it fits.
+Option 2 is what [MD2HTML](http://147.15.103.217/md2html) is. This guide shows how to use it, how to self-host it, and where it fits.
 
 ## What the API does
 
@@ -18,7 +18,7 @@ One endpoint: `POST /convert`. You send a JSON body containing Markdown, you get
 ### Quick example
 
 ```bash
-curl -X POST http://147.15.103.217:8777/convert \
+curl -X POST http://147.15.103.217/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Quick start\n\n- item one\n- item two\n\n```js\nconst x = 1;\n```"}'
 ```
@@ -38,7 +38,7 @@ import requests
 
 def md_to_html(markdown_text: str) -> str:
     r = requests.post(
-        "http://147.15.103.217:8777/convert",
+        "http://147.15.103.217/md2html/convert",
         json={"markdown": markdown_text},
         timeout=10,
     )
@@ -52,7 +52,7 @@ print(md_to_html("# Hello\n\nA **paragraph**."))
 
 ```typescript
 async function mdToHtml(markdown: string): Promise<string> {
-  const res = await fetch("http://147.15.103.217:8777/convert", {
+  const res = await fetch("http://147.15.103.217/md2html/convert", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ markdown }),
@@ -77,7 +77,7 @@ import (
 
 func mdToHTML(md string) (string, error) {
     body, _ := json.Marshal(map[string]string{"markdown": md})
-    resp, err := http.Post("http://147.15.103.217:8777/convert",
+    resp, err := http.Post("http://147.15.103.217/md2html/convert",
         "application/json", bytes.NewReader(body))
     if err != nil { return "", err }
     defer resp.Body.Close()
@@ -117,5 +117,5 @@ If you only ever render Markdown inside one SSG build, keep the bundled parser. 
 
 ## Links
 
-- API: <http://147.15.103.217:8777>
+- API: <http://147.15.103.217/md2html>
 - Source: <https://github.com/dcn13l/md2html-api>
