@@ -1,13 +1,28 @@
 #!/usr/bin/env python3
-"""Billing middleware: tracks API calls, enforces free tier, returns 402 on overage."""
+"""Billing middleware: tracks API calls, enforces free tier, returns 402 on overage.
+
+Clients are identified by an opaque "client id" — either the caller's IP address
+(legacy behaviour, no auth required) or an API key obtained via /register and
+sent in the X-API-Key header. Either way, the identifier is the key under which
+usage is recorded in usage.json.
+
+Backward compatible: record_call(ip) / check_usage(ip) still work exactly as
+before when no API key is supplied. The server is free to pass an API key in
+place of the IP to get a per-key bucket instead of a per-IP bucket.
+"""
 
 import json
 import os
+import secrets
 import time
 
 USAGE_FILE = "usage.json"
 FREE_TIER_LIMIT = 10
-CRYPTO_WALLET = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1"
+CRYPTO_WALLET = "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM"  # LTC mainnet
+
+# Prefix for keys minted by /register so we can tell issued keys from raw IPs
+# at a glance. Purely cosmetic; not enforced anywhere.
+KEY_PREFIX = "mk_"
 
 
 def _load_usage():
@@ -25,6 +40,39 @@ def _save_usage(data):
     """Save usage data to JSON file."""
     with open(USAGE_FILE, "w") as f:
         json.dump(data, f, indent=2)
+
+
+def generate_api_key():
+    """Mint a new opaque API key (32 hex chars, url-safe)."""
+    return KEY_PREFIX + secrets.token_hex(16)
+
+
+def register_client(ip=None):
+    """Generate a fresh API key, persist a zero-count usage entry for it, and
+    return the key plus the initial entry.
+
+    The optional ``ip`` is recorded on the entry for bookkeeping (so an operator
+    can later see which address first minted a key); it does NOT affect the free
+    tier, which is keyed on the API key, not the IP.
+    """
+    key = generate_api_key()
+    now = int(time.time())
+    data = _load_usage()
+    data[key] = {
+        "call_count": 0,
+        "first_call": now,
+        "last_call": now,
+        "kind": "api_key",
+        "ip": ip,
+    }
+    _save_usage(data)
+    return {
+        "api_key": key,
+        "wallet_address": CRYPTO_WALLET,
+        "free_tier_limit": FREE_TIER_LIMIT,
+        "calls_made": 0,
+        "remaining": FREE_TIER_LIMIT,
+    }
 
 
 def record_call(api_key):
@@ -92,23 +140,29 @@ if __name__ == "__main__":
         os.remove(test_usage_file)
 
     print("=== Billing Middleware Test ===")
-    print(f"Free tier: {FREE_TIER_LIMIT} calls\n")
+    print(f"Free tier: {FREE_TIER_LIMIT} calls")
+    print(f"Wallet:    {CRYPTO_WALLET}\n")
 
-    # Consume free tier
+    # 1) Register a brand-new API key
+    reg = register_client(ip="127.0.0.1")
+    print(f"Registered new API key: {reg['api_key']}")
+    print(f"  remaining: {reg['remaining']}/{reg['free_tier_limit']}\n")
+
+    # 2) Consume the free tier using that key
     for i in range(FREE_TIER_LIMIT):
-        result = record_call(test_key)
+        result = record_call(reg["api_key"])
         print(f"Call {result['calls_made']:2d}: status={result['status']}, "
               f"remaining={result.get('remaining', 0)}")
 
     # This call should trigger 402
     print()
-    result = record_call(test_key)
+    result = record_call(reg["api_key"])
     print(f"Call {result['calls_made']}: status={result['status']}, error={result.get('error', 'N/A')}")
     if result["status"] == 402:
         print(f"  -> Payment Required! Wallet: {result['wallet_address']}")
         print(f"  -> Message: {result['message']}")
 
-    print(f"\nFinal usage: {check_usage(test_key)}")
+    print(f"\nFinal usage: {check_usage(reg['api_key'])}")
 
     # Cleanup test artifacts
     if os.path.exists(test_usage_file):

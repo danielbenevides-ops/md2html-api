@@ -6,6 +6,17 @@
 
 MD2HTML API transforms Markdown text into ready-to-render HTML with XSS-safe escaping, URL sanitization, and standard styling. Ideal for blogs, docs, content pipelines, and static-site generators. Beyond the core converter, the service ships JSON prettification, text statistics, and URL slug generation — all from a single stdlib-only server.
 
+## Quick Start
+
+```bash
+curl -X POST http://147.15.103.217/md2html/convert \
+  -H "Content-Type: application/json" \
+  -d '{"markdown": "# Hello **world**"}'
+# {"html":"<h1>Hello <strong>world</strong></h1>","billing":{"status":"ok","call_count":1,"remaining":9}}
+```
+
+That's it — 10 free calls per IP, no API key required. See the [API Reference](#api-reference) for all 9 endpoints.
+
 ---
 
 ## Autonomous Business Experiment

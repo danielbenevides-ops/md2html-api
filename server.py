@@ -1,7 +1,7 @@
 """Markdown-to-HTML API server with billing + analytics + security hardening.
 Stdlib only. Run: python server.py"""
 import http.server, json, re, os, time, threading
-from billing import record_call, FREE_TIER_LIMIT
+from billing import record_call, register_client, FREE_TIER_LIMIT
 from analytics import log_call, get_stats, daily_report
 from extra_endpoints import HANDLERS as ENDPOINT_HANDLERS  # /json/prettify, /text/stats, /slug
 
@@ -37,6 +37,16 @@ def rate_check(ip):
         reqs.append(now)
         _rate_map[ip] = reqs
         return True
+
+# --- Billing client identity (API key via X-API-Key, else IP) ---
+def billing_client_id(handler):
+    """Return the billing identifier for this request: the X-API-Key header
+    if present, otherwise the client IP. This lets callers behind a shared NAT
+    or proxy get their own free-tier bucket by sending an API key."""
+    key = handler.headers.get("X-API-Key")
+    if key and key.strip():
+        return key.strip()
+    return handler.client_address[0]
 
 # --- Safe URL validator (prevents javascript: scheme XSS) ---
 def safe_url(url):
@@ -106,11 +116,18 @@ def md_to_html(text):
 
 GUIDE = """Markdown-to-HTML API — Usage Guide
 =====================================
+GET /register
+  Mint a new API key. Returns: {"api_key": "mk_...", "wallet_address": "...",
+                                "free_tier_limit": 10, "calls_made": 0, "remaining": 10}
+  Send the returned key on every billed request via the X-API-Key header.
+  Without a key, billing falls back to your IP address (still 10 free calls).
+
 POST /convert
+  Headers: optional X-API-Key: mk_...
   Body: raw markdown text (Content-Type: text/plain or application/json {"markdown": "..."})
   Returns: {"html": "<converted html string>", "billing": {...}}
   Supported: headings, bold, italic, links, inline/block code, unordered lists.
-  Free tier: 10 calls per IP. Then 402 + LTC wallet address.
+  Free tier: 10 free calls per client (IP or API key). Then 402 + LTC wallet.
 
 POST /json/prettify
   Body: application/json {"json": "<compact JSON string>"}
@@ -134,7 +151,7 @@ GET /usage    -> {"calls_made": N, "remaining": N}
 GET /stats    -> {"total_calls": N, "unique_ips": N, ...}
 
 Rate limit: 30 requests/minute per IP. Max body: 1MB.
-All POST endpoints share the same free tier (10 calls/IP) and billing.
+All POST endpoints share the same free tier (10 free calls per client — IP or API key) and billing.
 
 Examples:
   curl -X POST http://localhost:8777/convert -H "Content-Type: application/json" -d '{"markdown": "# Hello **world**"}'
@@ -158,7 +175,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
         self.send_header("Access-Control-Max-Age", "86400")
         self.end_headers()
         self.wfile.write(data)
@@ -172,7 +189,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
             self.send_header("Access-Control-Max-Age", "86400")
             self.end_headers()
             log_call(self.path, client_ip, 204, time.time() - t0)
@@ -200,7 +217,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     "uptime": f"{int(uptime // 86400)}d {int((uptime % 86400) // 3600)}h {int((uptime % 3600) // 60)}m {int(uptime % 60)}s",
                     "port": PORT,
                     "timestamp": int(time.time()),
-                    "endpoints": ["/health", "/convert", "/json/prettify", "/text/stats", "/slug", "/docs", "/payment", "/usage", "/stats"]
+                    "endpoints": ["/health", "/register", "/convert", "/json/prettify", "/text/stats", "/slug", "/docs", "/payment", "/usage", "/stats"]
                 }))
                 log_call("/health", client_ip, 200, time.time() - t0)
             elif self.path == "/docs":
@@ -213,11 +230,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     "message": "Send any amount of Litecoin to this address to continue using the API after the free tier."
                 }))
                 log_call("/payment", client_ip, 200, time.time() - t0)
+            elif self.path == "/register":
+                # Mint a new API key, keyed independently of the caller's IP so
+                # NAT/proxy users get their own free-tier bucket.
+                reg = register_client(ip=client_ip)
+                self.send(200, json.dumps(reg))
+                log_call("/register", client_ip, 200, time.time() - t0)
             elif self.path == "/usage":
                 from billing import check_usage
-                usage = check_usage(client_ip)
+                cid = billing_client_id(self)
+                usage = check_usage(cid)
                 self.send(200, json.dumps({
-                    "client": client_ip,
+                    "client": cid,
                     "calls_made": usage.get("call_count", 0),
                     "free_tier_limit": FREE_TIER_LIMIT,
                     "remaining": max(FREE_TIER_LIMIT - usage.get("call_count", 0), 0)
@@ -226,6 +250,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif self.path == "/stats":
                 self.send(200, json.dumps(get_stats()))
                 log_call("/stats", client_ip, 200, time.time() - t0)
+            elif self.path == "/uptime":
+                stats = get_stats()
+                self.send(200, json.dumps({
+                    "uptime_seconds": round(time.time() - _STARTED_AT, 1),
+                    "total_calls": stats.get("total_calls", 0),
+                    "unique_ips": stats.get("unique_ips", 0),
+                }))
+                log_call("/uptime", client_ip, 200, time.time() - t0)
             elif self.path == "/" or self.path == "/index.html":
                 # Serve the landing page
                 idx = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
@@ -284,8 +316,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     self.send(status, err)
                     log_call(path, client_ip, status, time.time() - t0)
                     return
+                # /convert-specific body cap: 50KB markdown input
+                if len(raw) > 50 * 1024:
+                    self.send(413, json.dumps({
+                        "error": "Markdown input too large",
+                        "max_bytes": 50 * 1024,
+                        "received_bytes": len(raw),
+                        "message": "Markdown input exceeds the 50KB limit. Truncate and retry."
+                    }))
+                    log_call(path, client_ip, 413, time.time() - t0)
+                    return
                 # Billing check (only after body validation)
-                bill = record_call(client_ip)
+                bill = record_call(billing_client_id(self))
                 if bill.get("status") == 402:
                     self.send(402, json.dumps(bill))
                     log_call(path, client_ip, 402, time.time() - t0)
@@ -320,7 +362,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     log_call(path, client_ip, status, time.time() - t0)
                     return
                 # Billing check
-                bill = record_call(client_ip)
+                bill = record_call(billing_client_id(self))
                 if bill.get("status") == 402:
                     self.send(402, json.dumps(bill))
                     log_call(path, client_ip, 402, time.time() - t0)
