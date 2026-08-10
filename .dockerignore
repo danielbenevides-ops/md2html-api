@@ -1,0 +1,46 @@
+# Keep the Docker build context lean: only ship the files the container needs.
+# Everything else (git, build scripts, marketing docs, stale ledgers) is excluded.
+
+# Version control + misc
+.git
+.gitignore
+
+# Python bytecode / cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Build artifacts we don't want in the image
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Scripts that only run on the host
+deploy.sh
+harden_test.sh
+healthcheck.sh
+qa_test_linkpeek.sh
+generate_wallet.py
+make_wallet.py
+monitor.py
+check_balance.py
+
+# Tests (not needed in production image)
+test_server.py
+test_new_endpoints.py
+
+# Docs / marketing / research — keep the image lean
+*.md
+blog/
+blog-markdown-api.html
+report-aug8.html
+
+# Runtime data that should not bake into the image
+analytics.json
+uptime.json
+usage.json
+ledger.json
+.deploy.log
+data/

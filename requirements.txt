@@ -1,0 +1,4 @@
+# MD2HTML API is pure Python stdlib (http.server, json, re, os, time, threading).
+# No PyPI dependencies are required to run server.py.
+# This file exists so `pip install -r requirements.txt` is a no-op in the image,
+# keeping the layer cache stable and the image minimal.

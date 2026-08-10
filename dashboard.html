@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MD2HTML API — Live Dashboard</title>
+<style>
+  :root{--bg:#0d1117;--s:#161b22;--b:#30363d;--t:#e6edf3;--m:#8b949e;--a:#58a6ff;--g:#3fb950;--r:#f85149;--y:#d29922;--mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);padding:2rem 1rem;line-height:1.6}
+  .w{max-width:1000px;margin:0 auto}
+  h1{font-size:1.7rem;letter-spacing:-.02em;display:flex;align-items:center;gap:.6rem}
+  .sub{color:var(--m);margin-bottom:1.8rem;font-size:.9rem}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .card{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:1.1rem 1.3rem}
+  .card .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--m);margin-bottom:.4rem}
+  .card .val{font-size:1.6rem;font-weight:700;font-family:var(--mono)}
+  .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  .dot.g{background:var(--g);box-shadow:0 0 8px var(--g);animation:pulse 2s infinite}
+  .dot.r{background:var(--r);box-shadow:0 0 8px var(--r)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .badge{display:inline-block;padding:.15rem .6rem;border-radius:999px;font-size:.75rem;font-weight:600}
+  .badge.ok{background:rgba(63,185,80,.15);color:var(--g);border:1px solid var(--g)}
+  .badge.err{background:rgba(248,81,73,.15);color:var(--r);border:1px solid var(--r)}
+  .pt{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--m);margin:1.5rem 0 .8rem;font-weight:600}
+  #chart{width:100%;height:200px}
+  .ep-list{display:flex;flex-direction:column;gap:4px;margin-top:.6rem;font-size:.8rem;font-family:var(--mono)}
+  .ep{display:flex;justify-content:space-between;padding:2px 0}
+  .ep .bar-wrap{flex:1;margin:0 8px;background:var(--bg);border-radius:3px;height:18px;overflow:hidden;position:relative}
+  .ep .bar{height:100%;background:var(--a);border-radius:3px;opacity:.7;transition:width .5s}
+  .ep .n{color:var(--m);min-width:30px;text-align:right}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;font-family:var(--mono)}
+  th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--b)}
+  th{color:var(--m);font-size:.7rem;text-transform:uppercase;font-weight:600}
+  .row td:hover{background:var(--s)}
+  .pulse-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--g);margin-right:6px}
+  .updated{font-size:.75rem;color:var(--m);margin-top:1rem;font-family:var(--mono)}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+  @media(max-width:600px){.two-col{grid-template-columns:1fr}}
+  .rev{color:var(--y);font-weight:700}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1><span class="dot g" id="hd"></span> MD2HTML API Monitor</h1>
+  <div class="sub">Live monitoring dashboard — auto-refresh every 30s</div>
+
+  <div class="grid">
+    <div class="card"><div class="lbl">API Status</div><div class="val"><span class="badge ok" id="st">Checking…</span></div></div>
+    <div class="card"><div class="lbl">Total API Calls</div><div class="val" id="tc">—</div></div>
+    <div class="card"><div class="lbl">Uptime</div><div class="val" id="up">—</div></div>
+    <div class="card"><div class="lbl">LTC Balance</div><div class="val" id="ltc">— <span style="font-size:.8rem;color:var(--m)">LTC</span></div></div>
+    <div class="card"><div class="lbl">Unique IPs</div><div class="val" id="ip">—</div></div>
+    <div class="card"><div class="lbl">Est. Revenue</div><div class="val rev" id="rev">—</div></div>
+  </div>
+
+  <div class="pt">Endpoint Usage</div>
+  <div class="ep-list" id="eps"><span style="color:var(--m)">Loading…</span></div>
+
+  <div class="two-col" style="margin-top:1.5rem">
+    <div>
+      <div class="pt">Endpoint Calls Chart</div>
+      <canvas id="chart"></canvas>
+    </div>
+    <div>
+      <div class="pt">Last 10 API Calls</div>
+      <table id="calls"><thead><tr><th>Endpoint</th><th>Calls</th><th>Share</th></tr></thead>
+        <tbody><tr><td colspan="3" style="color:var(--m)">Loading…</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <div class="updated">Last updated: <span id="lu">—</span> · Auto-refresh: <span id="cd">30</span>s</div>
+</div>
+<script>
+const API = "http://147.15.103.217/md2html";
+let walletAddr = "";
+let countdown = 30;
+
+async function fetchJSON(url) {
+  const r = await fetch(url, { signal: AbortSignal.timeout?.(8000) || undefined });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+function fmtUptime(s) {
+  if (typeof s !== "number") return s || "—";
+  const d = Math.floor(s/86400), h = Math.floor(s%86400/3600), m = Math.floor(s%3600/60), sec = Math.floor(s%60);
+  return `${d}d ${h}h ${m}m ${sec}s`;
+}
+function $(id) { return document.getElementById(id); }
+
+async function refresh() {
+  // Health check
+  let health = null, stats = null;
+  try {
+    health = await fetchJSON(`${API}/health`);
+    $("st").textContent = "Operational";
+    $("st").className = "badge ok";
+    $("hd").className = "dot g";
+    $("up").textContent = fmtUptime(health.uptime_seconds);
+  } catch (e) {
+    $("st").textContent = "OFFLINE";
+    $("st").className = "badge err";
+    $("hd").className = "dot r";
+    $("up").textContent = "—";
+  }
+
+  // Stats
+  try {
+    stats = await fetchJSON(`${API}/stats`);
+    $("tc").textContent = stats.total_calls ?? "—";
+    $("ip").textContent = stats.unique_ips ?? "—";
+    const paid = Math.max(0, (stats.total_calls || 0) - (stats.unique_ips || 0) * 10);
+    $("rev").textContent = `$${(paid * 0.001).toFixed(4)}`;
+    drawEndpoints(stats.calls_by_endpoint || {});
+  } catch (e) {
+    $("tc").textContent = "Err";
+    $("ip").textContent = "Err";
+    $("rev").textContent = "—";
+  }
+
+  // Payment → BlockCypher balance
+  if (!walletAddr) {
+    try {
+      const pay = await fetchJSON(`${API}/payment`);
+      walletAddr = pay.wallet_address;
+    } catch (e) {}
+  }
+  if (walletAddr) {
+    try {
+      const bal = await fetchJSON(`https://api.blockcypher.com/v1/ltc/main/addrs/${walletAddr}/balance`);
+      $("ltc").innerHTML = `${(bal.final_balance / 1e8).toFixed(8)} <span style="font-size:.8rem;color:var(--m)">LTC</span>`;
+    } catch (e) { $("ltc").textContent = "Err"; }
+  }
+
+  const now = new Date();
+  $("lu").textContent = now.toLocaleTimeString();
+
+  countdown = 30;
+}
+
+function drawEndpoints(byEp) {
+  const entries = Object.entries(byEp).sort((a, b) => b[1] - a[1]);
+  const max = entries.length ? entries[0][1] : 1;
+  const total = entries.reduce((s, [, n]) => s + n, 0);
+
+  // List
+  $("eps").innerHTML = entries.map(([ep, n]) =>
+    `<div class="ep"><span>${ep}</span><div class="bar-wrap"><div class="bar" style="width:${(n / max * 100)}%"></div></div><span class="n">${n}</span></div>`
+  ).join("");
+
+  // Table — last 10 (top by calls as proxy)
+  const tb = $("calls").querySelector("tbody");
+  tb.innerHTML = entries.slice(0, 10).map(([ep, n]) =>
+    `<tr class="row"><td>${ep}</td><td>${n}</td><td>${(n / total * 100).toFixed(1)}%</td></tr>`
+  ).join("");
+
+  // Canvas chart
+  const cv = $("chart");
+  const ctx = cv.getContext("2d");
+  const W = cv.width = cv.offsetWidth * 2, H = cv.height = 400;
+  ctx.scale(1, 1);
+  ctx.clearRect(0, 0, W, H);
+  const bw = W / entries.length * 0.7, gap = W / entries.length;
+  entries.forEach(([ep, n], i) => {
+    const x = i * gap + (gap - bw) / 2;
+    const bh = (n / max) * (H - 60);
+    const grad = ctx.createLinearGradient(0, H - bh - 20, 0, H - 20);
+    grad.addColorStop(0, "#58a6ff"); grad.addColorStop(1, "#1f6feb");
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, H - bh - 20, bw, bh);
+    ctx.fillStyle = "#8b949e";
+    ctx.font = "20px monospace";
+    ctx.save(); ctx.translate(x + bw / 2, H - 5); ctx.rotate(-0.5);
+    ctx.fillText(ep.length > 10 ? ep.slice(0, 10) + "…" : ep, -20, 0);
+    ctx.restore();
+    ctx.fillStyle = "#e6edf3"; ctx.font = "bold 22px monospace";
+    ctx.fillText(n, x + 4, H - bh - 28);
+  });
+}
+
+refresh();
+setInterval(refresh, 30000);
+setInterval(() => { countdown--; $("cd").textContent = countdown; if (countdown <= 0) countdown = 30; }, 1000);
+</script>
+</body>
+</html>

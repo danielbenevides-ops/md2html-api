@@ -1,0 +1,41 @@
+{
+  "name": "md2html-api",
+  "version": "1.0.0",
+  "description": "Node.js SDK (fetch-based, zero deps) for the MD2HTML Markdown-to-HTML micropayment API.",
+  "main": "md2html-client.js",
+  "homepage": "http://147.15.103.217/md2html/",
+  "license": "MIT",
+  "author": "dcn13l",
+  "engines": {
+    "node": ">=18"
+  },
+  "exports": {
+    ".": {
+      "import": "./md2html-client.js",
+      "require": "./md2html-client.js"
+    }
+  },
+  "files": [
+    "md2html-client.js",
+    "README.md"
+  ],
+  "keywords": [
+    "md2html",
+    "markdown",
+    "markdown-to-html",
+    "html",
+    "converter",
+    "api",
+    "sdk",
+    "litecoin",
+    "micropayments"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dcn13l/md2html-api",
+    "directory": "sdk"
+  },
+  "scripts": {
+    "test": "node -e \"const {MD2HTMLClient}=require('./md2html-client');const c=new MD2HTMLClient();c.health().then(r=>{console.log('health ok:',JSON.stringify(r).slice(0,120));return c.convert('# Hi **world**');}).then(r=>{console.log('convert ok, html head:',String(r.html).slice(0,80));}).catch(e=>{console.error('FAIL',e.message);process.exit(1);});\""
+  }
+}

@@ -1,0 +1,935 @@
+{
+  "info": {
+    "_postman_id": "md2html-api-collection-v2-1",
+    "name": "MD2HTML API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Markdown-to-HTML conversion API with JSON/text utilities, billing, and analytics.\n\n## Quick Start\n1. **Register** an API key via `GET /register` (or use IP-based billing without a key).\n2. Send the key on every billed request via the `X-API-Key` header.\n3. **Free tier**: 10 calls per client (IP or API key), then HTTP 402 + LTC payment.\n\n## Rate Limiting\n30 requests/minute per IP. Max body: 1MB (`/convert` & `/sanitize`: 50KB markdown).\n\n## Pricing\n$0.001 per call, billed in Litecoin (LTC). No subscriptions, no credit cards.\n\n## Environment Variables\n- `base_url` — API root, e.g. `http://147.15.103.217/md2html`\n- `api_key` — your `mk_...` key from `/register` (leave empty for IP-based free tier)\n\nCollection uses `{{base_url}}` and `{{api_key}}` variables throughout."
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://147.15.103.217/md2html",
+      "type": "string",
+      "description": "MD2HTML API root URL. Default: live public instance."
+    },
+    {
+      "key": "api_key",
+      "value": "",
+      "type": "string",
+      "description": "API key (mk_...) from GET /register. Empty = IP-based free tier (10 calls)."
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Assert 2xx response on all requests (skip on documented error examples).",
+          "pm.test(\"response is ok\", function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Core",
+      "description": "Core conversion and registration endpoints — the primary MD2HTML API surface.",
+      "item": [
+        {
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"markdown\": \"# Hello **World**\\n\\nThis is *italic* text with a [link](https://example.com) and `inline code`.\\n\\n- Item one\\n- Item two\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "header": [
+            {
+              "key": "X-API-Key",
+              "value": "{{api_key}}",
+              "type": "text",
+              "description": "Optional. Required only after IP free tier is exhausted.",
+              "disabled": true
+            },
+            {
+              "key": "Content-Type",
+              "type": "text",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "url": {
+            "raw": "{{base_url}}/convert",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "convert"
+            ]
+          },
+          "description": "Convert a Markdown document to HTML.\n\n**Body**: `{\"markdown\": \"...\"}` (JSON) or raw markdown (`text/plain`).\n**Returns**: `{\"html\": \"...\", \"billing\": {...}}`.\n\nSupported syntax: headings, bold, italic, links, inline/block code, unordered lists. Free tier: 10 calls per client (IP or API key), then HTTP 402.",
+          "response": [
+            {
+              "name": "200 OK — Successful conversion",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"html\": \"<h1>Hello <strong>World</strong></h1>\\n<p>This is <em>italic</em> text with a <a href=\\\"https://example.com\\\">link</a> and <code>inline code</code>.</p>\\n<ul>\\n<li>Item one</li>\\n<li>Item two</li>\\n</ul>\",\n  \"billing\": {\n    \"status\": 200,\n    \"calls_made\": 1,\n    \"remaining\": 9,\n    \"free_tier_limit\": 10\n  }\n}",
+              "_postman_requestbody": {
+                "mode": "raw",
+                "raw": "{\"markdown\": \"# Hello **World**\"}"
+              }
+            },
+            {
+              "name": "402 Payment Required — Free tier exhausted",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 402,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": 402,\n  \"error\": \"Payment Required\",\n  \"message\": \"Free tier limit (10 calls) exceeded. You made 11 calls. Send payment to continue.\",\n  \"wallet_address\": \"Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM\",\n  \"calls_made\": 11,\n  \"free_tier_limit\": 10\n}",
+              "_postman_requestbody": {
+                "mode": "raw",
+                "raw": "{\"markdown\": \"# Hi\"}"
+              }
+            }
+          ]
+        },
+        {
+          "header": [],
+          "method": "GET",
+          "url": {
+            "raw": "{{base_url}}/register",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "register"
+            ]
+          },
+          "description": "Mint a new API key. No auth required.\n\n**Returns**: `{\"api_key\": \"mk_...\", \"wallet_address\": \"...\", \"free_tier_limit\": 10, \"calls_made\": 0, \"remaining\": 10}`.\n\nThe returned key is independent of the caller's IP — useful for NAT/proxy users to get their own free-tier bucket. Send it on every billed request via the `X-API-Key` header.\n\n**Tip**: Run a Test Script to auto-save the returned key to the `api_key` environment variable:\n```js\nconst res = pm.response.json();\nif (res.api_key) { pm.environment.set('api_key', res.api_key); }\n```",
+          "response": [
+            {
+              "name": "200 OK — New key minted",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"api_key\": \"mk_2ddf91574347ae032bea14f0b313555a\",\n  \"wallet_address\": \"Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM\",\n  \"free_tier_limit\": 10,\n  \"calls_made\": 0,\n  \"remaining\": 10\n}"
+            }
+          ]
+        },
+        {
+          "header": [],
+          "method": "GET",
+          "url": {
+            "raw": "{{base_url}}/health",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "health"
+            ]
+          },
+          "description": "Liveness probe. No auth required.\n\n**Returns**: service status, version, uptime, port, timestamp, and the full list of available endpoints.",
+          "response": [
+            {
+              "name": "200 OK — Service healthy",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"ok\",\n  \"version\": \"1.1.0\",\n  \"uptime_seconds\": 164512.5,\n  \"uptime\": \"1d 21h 41m 52s\",\n  \"port\": 8777,\n  \"timestamp\": 1786312815,\n  \"endpoints\": [\n    \"/health\",\n    \"/register\",\n    \"/convert\",\n    \"/sanitize\",\n    \"/batch\",\n    \"/json/prettify\",\n    \"/text/stats\",\n    \"/slug\",\n    \"/docs\",\n    \"/pricing\",\n    \"/payment\",\n    \"/usage\",\n    \"/stats\"\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "header": [],
+          "method": "GET",
+          "url": {
+            "raw": "{{base_url}}/docs",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "docs"
+            ]
+          },
+          "description": "Interactive API usage guide (plain text). Lists every endpoint, its body schema, and curl examples. No auth required.",
+          "response": [
+            {
+              "name": "200 OK — Usage guide",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/docs",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "docs"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "text/plain",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "Markdown-to-HTML API — Usage Guide\n=====================================\nGET /register\n  Mint a new API key. Returns: {\"api_key\": \"mk_...\", \"wallet_address\": \"...\",\n                                \"free_tier_limit\": 10, \"calls_made\": 0, \"remaining\": 10}\n  ...\nPOST /convert\n  Body: raw markdown text (Content-Type: text/plain or application/json {\"markdown\": \"...\"})\n  Returns: {\"html\": \"<converted html string>\", \"billing\": {...}}\n  ...\nRate limit: 30 requests/minute per IP. Max body: 1MB.\nAll POST endpoints share the same free tier (10 free calls per client — IP or API key) and billing."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Utilities",
+      "description": "Text and JSON helper endpoints. All share the same free tier (10 calls per client) and billing as the core endpoints.",
+      "item": [
+        {
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"json\": \"{\\\"a\\\":1,\\\"b\\\":2,\\\"c\\\":{\\\"nested\\\":true}}\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "header": [
+            {
+              "key": "X-API-Key",
+              "value": "{{api_key}}",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "Content-Type",
+              "type": "text",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "url": {
+            "raw": "{{base_url}}/json/prettify",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "json",
+              "prettify"
+            ]
+          },
+          "description": "Re-indent a compact JSON string with 2-space pretty printing.\n\n**Body**: `{\"json\": \"<compact JSON string>\"}` — note the value is a *string* containing JSON, not a JSON object.\n**Returns**: the input JSON re-indented with 2-space pretty printing, plus a `billing` object.\n\nReturns **400** on invalid JSON.",
+          "response": [
+            {
+              "name": "200 OK — Pretty-printed JSON",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"a\": 1,\n  \"b\": 2,\n  \"c\": {\n    \"nested\": true\n  },\n  \"billing\": {\n    \"status\": 200,\n    \"calls_made\": 2,\n    \"remaining\": 8,\n    \"free_tier_limit\": 10\n  }\n}",
+              "_postman_requestbody": {
+                "mode": "raw",
+                "raw": "{\"json\": \"{\\\"a\\\":1,\\\"b\\\":2,\\\"c\\\":{\\\"nested\\\":true}}\"}"
+              }
+            },
+            {
+              "name": "400 Bad Request — Invalid JSON",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid JSON\",\n  \"message\": \"The 'json' field must contain valid JSON.\"\n}",
+              "_postman_requestbody": {
+                "mode": "raw",
+                "raw": "{\"json\": \"{not valid json\"}"
+              }
+            }
+          ]
+        },
+        {
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"text\": \"The quick brown fox jumps over the lazy dog. The dog was not amused.\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "header": [
+            {
+              "key": "X-API-Key",
+              "value": "{{api_key}}",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "Content-Type",
+              "type": "text",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "url": {
+            "raw": "{{base_url}}/text/stats",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "text",
+              "stats"
+            ]
+          },
+          "description": "Compute text statistics: word count, character counts, reading time, and top words.\n\n**Body**: `{\"text\": \"<any text>\"}`.\n**Returns**:\n```json\n{\n  \"words\": N,\n  \"chars\": N,\n  \"chars_no_spaces\": N,\n  \"reading_time_min\": float,\n  \"top_words\": [[\"word\", count], ...],\n  \"billing\": {...}\n}\n```",
+          "response": [
+            {
+              "name": "200 OK — Text statistics",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"words\": 13,\n  \"chars\": 64,\n  \"chars_no_spaces\": 53,\n  \"reading_time_min\": 0.1,\n  \"top_words\": [\n    [\n      \"the\",\n      3\n    ],\n    [\n      \"dog\",\n      2\n    ],\n    [\n      \"quick\",\n      1\n    ],\n    [\n      \"brown\",\n      1\n    ],\n    [\n      \"fox\",\n      1\n    ]\n  ],\n  \"billing\": {\n    \"status\": 200,\n    \"calls_made\": 3,\n    \"remaining\": 7,\n    \"free_tier_limit\": 10\n  }\n}",
+              "_postman_requestbody": {
+                "mode": "raw",
+                "raw": "{\"text\": \"The quick brown fox jumps over the lazy dog. The dog was not amused.\"}"
+              }
+            }
+          ]
+        },
+        {
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"title\": \"Caf\\u00e9 \\u2014 Menus & Drinks!\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          },
+          "header": [
+            {
+              "key": "X-API-Key",
+              "value": "{{api_key}}",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "Content-Type",
+              "type": "text",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "url": {
+            "raw": "{{base_url}}/slug",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "slug"
+            ]
+          },
+          "description": "Convert a title string into a URL-safe slug.\n\n**Body**: `{\"title\": \"<title string>\"}`.\n**Returns**: `{\"slug\": \"<url-safe-slug>\", \"billing\": {...}}`.\n\nHandles Unicode (accents stripped), em-dashes, ampersands, and punctuation.",
+          "response": [
+            {
+              "name": "200 OK — Slug generated",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"slug\": \"cafe-menus-drinks\",\n  \"billing\": {\n    \"status\": 200,\n    \"calls_made\": 4,\n    \"remaining\": 6,\n    \"free_tier_limit\": 10\n  }\n}",
+              "_postman_requestbody": {
+                "mode": "raw",
+                "raw": "{\"title\": \"Caf\\u00e9 \\u2014 Menus & Drinks!\"}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "description": "Billing, usage tracking, and service analytics endpoints. These read-only endpoints are not billed.",
+      "item": [
+        {
+          "header": [],
+          "method": "GET",
+          "url": {
+            "raw": "{{base_url}}/payment",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "payment"
+            ]
+          },
+          "description": "Get the Litecoin wallet address for topping up your API quota after the 10-call free tier. No auth required.\n\n**Returns**: `{\"wallet_address\": \"...\", \"currency\": \"LTC\", \"message\": \"...\"}`.",
+          "response": [
+            {
+              "name": "200 OK — Wallet info",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"wallet_address\": \"Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM\",\n  \"currency\": \"LTC\",\n  \"message\": \"Send any amount of Litecoin to this address to continue using the API after the free tier.\"\n}"
+            }
+          ]
+        },
+        {
+          "header": [
+            {
+              "key": "X-API-Key",
+              "value": "{{api_key}}",
+              "type": "text",
+              "description": "Optional. Without it, usage is looked up by your IP address.",
+              "disabled": true
+            }
+          ],
+          "method": "GET",
+          "url": {
+            "raw": "{{base_url}}/usage",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "usage"
+            ]
+          },
+          "description": "Check your current API call usage. Billed client is identified by `X-API-Key` header if present, otherwise by IP address. This endpoint is not billed.\n\n**Returns**:\n```json\n{\n  \"client\": \"127.0.0.1\",\n  \"calls_made\": N,\n  \"free_tier_limit\": 10,\n  \"remaining\": N\n}\n```",
+          "response": [
+            {
+              "name": "200 OK — Within free tier",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"client\": \"127.0.0.1\",\n  \"calls_made\": 5,\n  \"free_tier_limit\": 10,\n  \"remaining\": 5\n}"
+            },
+            {
+              "name": "200 OK — Free tier exhausted",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"client\": \"127.0.0.1\",\n  \"calls_made\": 30,\n  \"free_tier_limit\": 10,\n  \"remaining\": 0\n}"
+            }
+          ]
+        },
+        {
+          "header": [],
+          "method": "GET",
+          "url": {
+            "raw": "{{base_url}}/stats",
+            "host": [
+              "{{base_url}}"
+            ],
+            "path": [
+              "stats"
+            ]
+          },
+          "description": "Aggregate service metrics: total calls, unique client IPs, calls per endpoint, and average latency. Public, read-only. No auth required.",
+          "response": [
+            {
+              "name": "200 OK — Service statistics",
+              "originalRequest": {
+                "method": "?",
+                "url": {
+                  "raw": "?",
+                  "host": [
+                    "?"
+                  ],
+                  "path": [
+                    "?"
+                  ]
+                },
+                "header": []
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "X-Content-Type-Options",
+                  "key": "X-Content-Type-Options",
+                  "value": "nosniff",
+                  "type": "text"
+                },
+                {
+                  "name": "X-Frame-Options",
+                  "key": "X-Frame-Options",
+                  "value": "DENY",
+                  "type": "text"
+                },
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*",
+                  "type": "text"
+                },
+                {
+                  "name": "Content-Type",
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "type": "text"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"total_calls\": 292,\n  \"unique_ips\": 1,\n  \"calls_by_endpoint\": {\n    \"/health\": 40,\n    \"/register\": 23,\n    \"/convert\": 83,\n    \"/slug\": 24,\n    \"/\": 43,\n    \"/json/prettify\": 21,\n    \"/text/stats\": 15,\n    \"/usage\": 11,\n    \"/stats\": 11,\n    \"/docs\": 10,\n    \"/payment\": 10,\n    \"/pricing\": 1\n  },\n  \"avg_latency\": 0.001\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
