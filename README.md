@@ -56,8 +56,8 @@ Example response:
 
 ```json
 {
-  "html": "<h1>Hello <strong>world</strong></h1>\n<ul>\n<li>one</li>\n<li>two</li>\n</ul>",
-  "billing": {"status": 200, "call_count": 1, "remaining": 9}
+  "html": "<h1>Hello <strong>world</strong></h1>\n\n<ul>\n<li>one</li>\n<li>two</li>\n</ul>",
+  "billing": {"status": 200, "calls_made": 1, "remaining": 9, "free_tier_limit": 10}
 }
 ```
 
@@ -72,6 +72,23 @@ curl -X POST http://147.15.103.217/md2html/convert \
   -H 'X-API-Key: mk_...' \
   -d '{"markdown":"## Keyed request"}'
 ```
+
+### Python (standard library only)
+
+```python
+import json
+from urllib.request import Request, urlopen
+
+request = Request(
+    "http://147.15.103.217/md2html/convert",
+    data=json.dumps({"markdown": "# Hello **world**"}).encode(),
+    headers={"Content-Type": "application/json"},
+)
+with urlopen(request) as response:
+    print(json.load(response))
+```
+
+This example uses only the Python standard library; add an `X-API-Key` header when you want a separate free-tier bucket.
 
 ## API reference — 18 endpoints
 
