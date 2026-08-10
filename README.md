@@ -4,12 +4,19 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Dependencies: none](https://img.shields.io/badge/dependencies-none-2ea44f)](#features)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](#license)
+[![GitHub stars](https://img.shields.io/github/stars/dcn13l/md2html-api?style=social)](https://github.com/dcn13l/md2html-api/stargazers)
 
 > Convert Markdown to clean HTML and use a practical set of developer utilities over HTTP. **Python standard library only. No pip install. No subscriptions.**
 
 **Live API:** <http://147.15.103.217/md2html/>
 **Repository:** <https://github.com/dcn13l/md2html-api>
 **Release:** `v1.3.0` — 18 endpoints, LTC micropayments, and an enhanced landing page
+
+## ⭐ Stargazers
+
+If MD2HTML API is useful, [star the repository](https://github.com/dcn13l/md2html-api) to help other developers discover this zero-dependency Markdown→HTML API.
+
+[View all stargazers](https://github.com/dcn13l/md2html-api/stargazers) · [Watch releases](https://github.com/dcn13l/md2html-api/subscription)
 
 ## Why MD2HTML?
 
