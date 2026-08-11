@@ -1,24 +1,70 @@
 {
   "balance": 0.0,
   "blocked": [
-    {"item": "billing_bypass_vuln", "reason": "X-API-Key spoofing gives unlimited free buckets — any arbitrary key auto-registers. Fix: enforce mk_ prefix validation in record_call.", "since": "2026-08-08T13:00:00-03:00"},
-    {"item": "post_register_GET_only", "reason": "POST /register returns 404 — only GET /register handled.", "since": "2026-08-08T13:00:00-03:00"},
-    {"item": "server_merge_conflict_markers", "reason": "server.py has unresolved git merge-conflict markers. Must resolve before next VPS deploy.", "since": "2026-08-08T13:00:00-03:00"},
-    {"item": "actual_distribution", "reason": "All distribution content written but NONE posted. Need user approval to post to communities.", "since": "2026-08-07T02:30:00+00:00"}
+    {
+      "item": "actual_distribution",
+      "reason": "Distribution drafts and SEO assets are ready; posting to external communities still needs an authenticated community account/approval, so no post was fabricated.",
+      "since": "2026-08-07T02:30:00+00:00"
+    }
   ],
-  "costs": {"model_tokens_7d": 0.0, "vps_monthly": 0.0},
-  "last_report": "2026-08-08T13:30:00-03:00",
-  "metrics": {"landing_views": 0, "real_revenue_ltc": 0.0, "total_api_calls": 231, "unique_real_users": 0},
-  "notes": "Stage 1 validation. $0 budget. API live on VPS 17h+ uptime. 231 calls (all localhost). 0 revenue. 15-agent sprint: +batch/+sanitize endpoints, fixed URLs, enhanced landing, SEO blog, submission drafts, billing verified E2E, security audit (1 FAIL: billing bypass), healthcheck.sh, market research v3, new outreach posts, pricing card. NEXT: fix billing vuln, resolve merge markers, POST distribution, submit awesome-list PRs.",
-  "primitives": {"coinbase_cdp": false, "deploy_vps": true, "github": true, "github_auth": true, "ltc_wallet": true, "polymarket": false, "stripe": false, "task_market": false},
+  "costs": {
+    "model_tokens_7d": 0.0,
+    "vps_monthly": 0.0
+  },
+  "last_report": "2026-08-10T22:43:53-03:00",
+  "metrics": {
+    "landing_views": 0,
+    "potential_conversion_attempts": 7,
+    "real_revenue_ltc": 0.0,
+    "total_api_calls": 304,
+    "unique_real_users": 0
+  },
+  "notes": "Stage 1 validation. $0 budget. v1.4.0 deployed and healthy on VPS. Billing usage reads/writes are now serialized and the concurrent free-tier regression passes; webhook SSRF checks, SDK tests, local HTTP suite (23 tests), live smoke suite (5 tests), and GitHub CI all pass. 304 observed calls are dominated by localhost/browser smoke traffic; 0 confirmed real users and 0 revenue. Distribution remains the highest-ROI blocked action.",
+  "primitives": {
+    "coinbase_cdp": false,
+    "deploy_vps": true,
+    "github": true,
+    "github_auth": true,
+    "ltc_wallet": true,
+    "polymarket": false,
+    "stripe": false,
+    "task_market": false
+  },
   "product": {
     "billing": "10 free calls then 402 + LTC wallet ($0.001/call)",
-    "endpoints": ["/health", "/register", "/convert", "/batch", "/sanitize", "/json/prettify", "/text/stats", "/slug", "/docs", "/payment", "/usage", "/stats"],
+    "endpoints": [
+      "/health",
+      "/register",
+      "/keys/info",
+      "/keys/revoke",
+      "/keys/rotate",
+      "/convert",
+      "/markdown/lint",
+      "/html/minify",
+      "/table/parse",
+      "/sanitize",
+      "/batch",
+      "/webhook/register",
+      "/webhook/test",
+      "/minify",
+      "/html/extract",
+      "/url/shorten",
+      "/cron/parse",
+      "/regex/test",
+      "/json/prettify",
+      "/text/stats",
+      "/slug",
+      "/docs",
+      "/pricing",
+      "/payment",
+      "/usage",
+      "/stats"
+    ],
     "local_dir": "~/autonomous-business-product",
     "name": "MD2HTML API",
     "port": 8777,
     "repo": "github.com/dcn13l/md2html-api",
-    "version": "1.2.0",
+    "version": "1.4.0",
     "vps_url": "http://147.15.103.217/md2html/",
     "wallet": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM",
     "wallet_balance_ltc": 0.0
