@@ -1,19 +1,37 @@
 """Markdown-to-HTML API server with billing + analytics + security hardening.
 Stdlib only. Run: python server.py"""
+import hashlib
 import http.server, json, re, os, time, threading
+from collections import OrderedDict
 import html
+import http.client
+import ipaddress
+import socket
+import urllib.request
+from urllib.parse import urlparse
 from html.parser import HTMLParser
-from billing import record_call, register_client, FREE_TIER_LIMIT
+from billing import (
+    record_call, register_client, check_usage, generate_api_key, is_valid_api_key,
+    _load_usage, _save_usage, FREE_TIER_LIMIT,
+)
 from analytics import log_call, get_stats, daily_report
 from extra_endpoints import HANDLERS as ENDPOINT_HANDLERS  # /json/prettify, /text/stats, /slug
 
 PORT = 8777
-VERSION = "1.3.0"  # bumped for /minify, /html/extract, /url/shorten, /cron/parse, /regex/test
+VERSION = "1.4.0"  # added /markdown/lint, /html/minify, /table/parse
 MAX_BODY = 1024 * 1024  # 1MB body cap (anti-OOM)
 RATE_LIMIT_WINDOW = 60  # seconds
 RATE_LIMIT_MAX = 30  # max requests per IP per window
 BATCH_MAX_ITEMS = 50  # max items per /batch request
 _STARTED_AT = time.time()  # server startup timestamp for /health uptime
+
+# /convert memoization. Cache the deterministic Markdown -> HTML work, not the
+# complete response: billing metadata is intentionally fresh for every call.
+CONVERT_CACHE_MAX_ENTRIES = 256
+_CONVERT_CACHE_LOCK = threading.Lock()
+_convert_cache = OrderedDict()  # {md5: (markdown, html)}; insertion-ordered LRU
+_convert_cache_hits = 0
+_convert_cache_misses = 0
 
 # --- In-memory URL shortener store (thread-safe) ---
 _SHORT_LOCK = threading.Lock()
@@ -43,6 +61,182 @@ except Exception:
 _rate_lock = threading.Lock()
 _rate_map = {}  # {ip: [(timestamp, ...)]}
 
+# --- Webhook registrations (thread-safe, in-memory) -----------------------
+_WEBHOOK_LOCK = threading.Lock()
+_webhook_registry = {}  # {billing client id: callback URL}
+WEBHOOK_TIMEOUT = 5
+WEBHOOK_MAX_URL = 2048
+
+
+def _ensure_public_webhook_host(hostname):
+    """Reject loopback/private/link-local callback destinations, including DNS."""
+    hostname = (hostname or "").rstrip(".").lower()
+    if (not hostname or hostname == "localhost" or hostname.endswith(".localhost")
+            or hostname.endswith(".local")):
+        raise ValueError("callback host must be publicly reachable")
+    try:
+        addresses = {ipaddress.ip_address(hostname)}
+    except ValueError:
+        try:
+            infos = socket.getaddrinfo(hostname, None, type=socket.SOCK_STREAM)
+            addresses = {ipaddress.ip_address(info[4][0]) for info in infos}
+        except (OSError, ValueError):
+            raise ValueError("callback host could not be resolved")
+    if not addresses or any(not address.is_global for address in addresses):
+        raise ValueError("callback host must resolve to a public address")
+    return tuple(str(address) for address in addresses)
+
+
+def _validate_webhook_url(callback_url):
+    """Return a normalized HTTP(S) callback URL or raise ValueError."""
+    if not isinstance(callback_url, str):
+        raise ValueError("callback URL must be a string")
+    callback_url = callback_url.strip()
+    parsed = urlparse(callback_url)
+    if (not callback_url or len(callback_url) > WEBHOOK_MAX_URL or
+            parsed.scheme not in ("http", "https") or not parsed.netloc):
+        raise ValueError("callback URL must be a valid http:// or https:// URL")
+    if parsed.username or parsed.password:
+        raise ValueError("callback URL must not contain embedded credentials")
+    try:
+        _ensure_public_webhook_host(parsed.hostname)
+    except ValueError as exc:
+        raise ValueError(str(exc))
+    return callback_url
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Do not follow callback redirects into a second, unchecked destination."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    """Connect to a previously validated address while preserving Host/SNI."""
+    def __init__(self, host, *args, resolved_ip=None, **kwargs):
+        self._resolved_ip = resolved_ip
+        super().__init__(host, *args, **kwargs)
+
+    def connect(self):
+        self.sock = socket.create_connection(
+            (self._resolved_ip, self.port), self.timeout, self.source_address
+        )
+        if self._tunnel_host:
+            self._tunnel()
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """HTTPS variant that pins the TCP destination but keeps hostname TLS."""
+    def __init__(self, host, *args, resolved_ip=None, **kwargs):
+        self._resolved_ip = resolved_ip
+        super().__init__(host, *args, **kwargs)
+
+    def connect(self):
+        self.sock = socket.create_connection(
+            (self._resolved_ip, self.port), self.timeout, self.source_address
+        )
+        if self._tunnel_host:
+            self._tunnel()
+        server_hostname = self._tunnel_host or self.host
+        self.sock = self._context.wrap_socket(
+            self.sock, server_hostname=server_hostname
+        )
+
+
+class _PinnedHTTPHandler(urllib.request.HTTPHandler):
+    def __init__(self, resolved_ip):
+        super().__init__()
+        self._resolved_ip = resolved_ip
+
+    def http_open(self, req):
+        return self.do_open(
+            _PinnedHTTPConnection, req, resolved_ip=self._resolved_ip
+        )
+
+
+class _PinnedHTTPSHandler(urllib.request.HTTPSHandler):
+    def __init__(self, resolved_ip):
+        super().__init__()
+        self._resolved_ip = resolved_ip
+
+    def https_open(self, req):
+        return self.do_open(
+            _PinnedHTTPSConnection,
+            req,
+            resolved_ip=self._resolved_ip,
+            context=self._context,
+            check_hostname=self._check_hostname,
+        )
+
+
+def register_webhook(client_id, callback_url):
+    """Register or replace the callback URL for one API-key/IP client."""
+    callback_url = _validate_webhook_url(callback_url)
+    with _WEBHOOK_LOCK:
+        _webhook_registry[client_id] = callback_url
+    return callback_url
+
+
+def _get_webhook(client_id):
+    with _WEBHOOK_LOCK:
+        return _webhook_registry.get(client_id)
+
+
+def _post_webhook(callback_url, payload):
+    """POST a JSON webhook payload, returning delivery status without raising."""
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request = urllib.request.Request(
+        callback_url,
+        data=body,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "MD2HTML-Webhook/1.0",
+        },
+    )
+    try:
+        # Resolve once, reject private answers, and pin the TCP destination so
+        # a DNS rebinding cannot swap in an internal address between checks.
+        parsed = urlparse(callback_url)
+        resolved = _ensure_public_webhook_host(parsed.hostname)
+        if not resolved:
+            # Test doubles may only validate without returning addresses.
+            resolved = (parsed.hostname,)
+        resolved_ip = resolved[0]
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}),
+            _NoRedirectHandler(),
+            _PinnedHTTPHandler(resolved_ip),
+            _PinnedHTTPSHandler(resolved_ip),
+        )
+        with opener.open(request, timeout=WEBHOOK_TIMEOUT) as response:
+            status_code = getattr(response, "status", response.getcode())
+            if 200 <= status_code < 300:
+                return {"delivered": True, "status_code": status_code}
+            return {"delivered": False, "status_code": status_code}
+    except Exception as exc:
+        return {"delivered": False, "error": str(exc)[:300]}
+
+
+def notify_webhook(client_id, payload):
+    """Notify a client's registered callback, if present."""
+    callback_url = _get_webhook(client_id)
+    if not callback_url:
+        return {"delivered": False, "error": "No webhook registered"}
+    result = _post_webhook(callback_url, payload)
+    result["callback_url"] = callback_url
+    return result
+
+
+def _notify_webhook_async(client_id, payload):
+    """Deliver a batch callback without holding up the API response."""
+    thread = threading.Thread(
+        target=notify_webhook, args=(client_id, payload), daemon=True
+    )
+    thread.start()
+    return thread
+
 def rate_check(ip):
     """Return True if IP is within rate limit, False if exceeded."""
     now = time.time()
@@ -64,8 +258,110 @@ def billing_client_id(handler):
     or proxy get their own free-tier bucket by sending an API key."""
     key = handler.headers.get("X-API-Key")
     if key and key.strip():
-        return key.strip()
+        key = key.strip()
+        if is_valid_api_key(key):
+            return key
     return handler.client_address[0]
+
+# --- API key lifecycle management ----------------------------------------
+_KEY_LOCK = threading.RLock()
+
+
+def request_api_key(handler):
+    """Return the trimmed X-API-Key value supplied by a request, if any."""
+    key = handler.headers.get("X-API-Key", "")
+    return key.strip() if key and key.strip() else None
+
+
+def _key_record(key):
+    """Return the persisted record for a key, or None when it is unknown."""
+    if not key:
+        return None
+    with _KEY_LOCK:
+        return _load_usage().get(key)
+
+
+def _is_revoked_key(handler):
+    """Return True when the request presents a persisted revoked key."""
+    entry = _key_record(request_api_key(handler))
+    return bool(entry and entry.get("revoked"))
+
+
+def _require_managed_key(handler):
+    """Authenticate a key-management request by possession of an active key."""
+    key = request_api_key(handler)
+    entry = _key_record(key)
+    if not key:
+        return None, {"error": "X-API-Key header required"}
+    if not is_valid_api_key(key) or not isinstance(entry, dict) or entry.get("kind") != "api_key":
+        return None, {"error": "Invalid API key"}
+    if entry.get("revoked"):
+        return None, {"error": "API key has been revoked"}
+    return key, None
+
+
+def key_info(key):
+    """Return plan and free-tier usage for an active API key."""
+    entry = _key_record(key) or {}
+    calls_made = int(entry.get("call_count", 0) or 0)
+    remaining = max(FREE_TIER_LIMIT - calls_made, 0)
+    return {
+        "api_key": key,
+        "status": "active",
+        "plan": entry.get("plan", "free"),
+        "usage": {
+            "calls_made": calls_made,
+            "free_tier_limit": FREE_TIER_LIMIT,
+        },
+        # Keep the flat fields consistent with the existing /usage response.
+        "calls_made": calls_made,
+        "free_tier_limit": FREE_TIER_LIMIT,
+        "remaining_free_calls": remaining,
+        "remaining": remaining,
+    }
+
+
+def revoke_key(key):
+    """Persist a revocation marker for an API key."""
+    with _KEY_LOCK:
+        data = _load_usage()
+        entry = data.get(key)
+        if not is_valid_api_key(key) or not isinstance(entry, dict) or entry.get("kind") != "api_key":
+            return False
+        if not entry.get("revoked"):
+            entry["revoked"] = True
+            entry["revoked_at"] = int(time.time())
+            _save_usage(data)
+        return True
+
+
+def rotate_key(old_key, ip=None):
+    """Atomically revoke old_key and persist a replacement API key."""
+    with _KEY_LOCK:
+        data = _load_usage()
+        old_entry = data.get(old_key)
+        if not isinstance(old_entry, dict) or old_entry.get("kind") != "api_key":
+            return None
+        if old_entry.get("revoked"):
+            return None
+        new_key = generate_api_key()
+        while new_key in data:
+            new_key = generate_api_key()
+        now = int(time.time())
+        old_entry["revoked"] = True
+        old_entry["revoked_at"] = now
+        old_entry["replaced_by"] = new_key
+        data[new_key] = {
+            "call_count": 0,
+            "first_call": now,
+            "last_call": now,
+            "kind": "api_key",
+            "ip": ip,
+            "plan": old_entry.get("plan", "free"),
+        }
+        _save_usage(data)
+        return new_key
+
 
 # --- Safe URL validator (prevents javascript: scheme XSS) ---
 def safe_url(url):
@@ -93,6 +389,198 @@ def minify_html(src):
         last = m.end()
     chunks.append(re.sub(r"\s{2,}", " ", src[last:].strip()))
     return "".join(chunks)
+
+
+def _lint_warning(line, code, message, severity="warning"):
+    """Build the stable warning shape returned by /markdown/lint."""
+    return {"line": line, "code": code, "message": message, "severity": severity}
+
+
+def lint_markdown(text):
+    """Perform lightweight, dependency-free Markdown syntax validation.
+
+    This is intentionally a linter rather than a renderer: recoverable style
+    issues are reported as warnings, while constructs that cannot be closed
+    (fences, inline code, links, or brackets) make ``valid`` false.
+    """
+    if not isinstance(text, str):
+        text = str(text)
+    lines = text.splitlines() or [""]
+    warnings = []
+    fence = None  # (character, minimum length, opening line)
+
+    for line_no, line in enumerate(lines, 1):
+        fence_match = re.match(r"^\s*(`{3,}|~{3,})", line)
+        if fence_match:
+            marker = fence_match.group(1)
+            if fence is None:
+                fence = (marker[0], len(marker), line_no)
+            elif marker[0] == fence[0] and len(marker) >= fence[1]:
+                fence = None
+            else:
+                warnings.append(_lint_warning(
+                    line_no, "unexpected-code-fence",
+                    "Code fence does not match the currently open fence.",
+                ))
+            continue
+
+        if fence is not None:
+            continue
+
+        if re.match(r"^\s*#{1,6}\S", line):
+            warnings.append(_lint_warning(
+                line_no, "heading-missing-space",
+                "ATX headings need a space after the # markers.",
+            ))
+        if re.match(r"^\s*[-+*]\S", line):
+            warnings.append(_lint_warning(
+                line_no, "list-missing-space",
+                "List markers need a space before the list item text.",
+            ))
+
+        # Backticks are counted per line so an unclosed inline span is
+        # attributable to the line where it starts.
+        if line.count("`") % 2:
+            warnings.append(_lint_warning(
+                line_no, "unclosed-inline-code",
+                "Inline code span has no closing backtick.",
+                "error",
+            ))
+        if line.count("[") != line.count("]"):
+            warnings.append(_lint_warning(
+                line_no, "unmatched-bracket",
+                "Square brackets are not balanced.",
+                "error",
+            ))
+        if re.search(r"\[[^\]]*\]\([^)]*$", line):
+            warnings.append(_lint_warning(
+                line_no, "malformed-link",
+                "Link destination is missing a closing parenthesis.",
+                "error",
+            ))
+
+    if fence is not None:
+        warnings.append(_lint_warning(
+            fence[2], "unclosed-code-fence",
+            "Fenced code block is not closed.",
+            "error",
+        ))
+    if not text.strip():
+        warnings.append(_lint_warning(
+            1, "empty-input", "Markdown input is empty.", "warning",
+        ))
+
+    warnings.sort(key=lambda item: (item["line"], item["code"]))
+    return {
+        "valid": not any(item["severity"] == "error" for item in warnings),
+        "warnings": warnings,
+        "line_count": len(lines),
+    }
+
+
+def _split_markdown_table_row(line):
+    """Split a Markdown table row while honoring escaped pipes and code spans."""
+    cells = []
+    current = []
+    escaped = False
+    in_code = False
+    for char in line.strip():
+        if escaped:
+            current.append(char)
+            escaped = False
+            continue
+        if char == "\\":
+            escaped = True
+            current.append(char)
+            continue
+        if char == "`":
+            in_code = not in_code
+            current.append(char)
+            continue
+        if char == "|" and not in_code:
+            cells.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+    if escaped:
+        current.append("\\")
+    cells.append("".join(current).strip())
+    if len(cells) > 1 and cells[0] == "":
+        cells.pop(0)
+    if len(cells) > 1 and cells[-1] == "":
+        cells.pop()
+    return cells
+
+
+def _clean_table_cell(cell):
+    """Normalize the small amount of escaping that Markdown tables need."""
+    return re.sub(r"\\([|\\])", r"\1", cell.strip())
+
+
+def parse_markdown_table(markdown):
+    """Parse the first Markdown pipe table into JSON-friendly structures.
+
+    A valid table has a header row followed immediately by a delimiter row.
+    Rows are returned as objects keyed by the header names, with alignment and
+    dimensions included as metadata.
+    """
+    if not isinstance(markdown, str):
+        markdown = str(markdown)
+    lines = markdown.splitlines()
+    header_index = None
+    headers = None
+    separator = None
+    for index in range(len(lines) - 1):
+        if "|" not in lines[index] or "|" not in lines[index + 1]:
+            continue
+        candidate_headers = _split_markdown_table_row(lines[index])
+        candidate_separator = _split_markdown_table_row(lines[index + 1])
+        if not candidate_headers or not candidate_separator:
+            continue
+        if all(re.fullmatch(r":?-{3,}:?", cell.replace(" ", ""))
+               for cell in candidate_separator):
+            header_index = index
+            headers = [_clean_table_cell(cell) for cell in candidate_headers]
+            separator = candidate_separator
+            break
+    if header_index is None:
+        raise ValueError("No valid Markdown table found")
+    if len(headers) != len(separator):
+        raise ValueError("Table header and delimiter column counts differ")
+    if any(not header for header in headers):
+        raise ValueError("Table headers must not be empty")
+
+    alignments = []
+    for cell in separator:
+        marker = cell.replace(" ", "")
+        left = marker.startswith(":")
+        right = marker.endswith(":")
+        alignments.append("center" if left and right else "left" if left else "right" if right else None)
+
+    rows = []
+    for line_no, line in enumerate(lines[header_index + 2:], header_index + 3):
+        if not line.strip():
+            if rows:
+                break
+            continue
+        if "|" not in line:
+            break
+        cells = _split_markdown_table_row(line)
+        if len(cells) != len(headers):
+            raise ValueError(
+                f"Table row on line {line_no} has {len(cells)} columns; expected {len(headers)}"
+            )
+        rows.append({header: _clean_table_cell(value)
+                     for header, value in zip(headers, cells)})
+
+    return {
+        "headers": headers,
+        "rows": rows,
+        "alignments": alignments,
+        "row_count": len(rows),
+        "column_count": len(headers),
+    }
+
 
 def minify_css(src):
     """Minify CSS: strip comments, collapse whitespace, trim trailing semicolons."""
@@ -397,6 +885,48 @@ def md_to_html(text, already_escaped=False):
         text = text.replace(f"\x00CODE{i}\x00", f"<pre><code>{code}</code></pre>")
     return text.strip()
 
+
+def cached_md_to_html(markdown):
+    """Convert Markdown with a bounded, thread-safe MD5-keyed LRU cache.
+
+    The original input is retained alongside the digest so an accidental MD5
+    collision cannot return another request's HTML. Conversion happens outside
+    the lock so concurrent cache misses do not block unrelated requests.
+    """
+    global _convert_cache_hits, _convert_cache_misses
+    cache_key = hashlib.md5(markdown.encode("utf-8"), usedforsecurity=False).hexdigest()
+    with _CONVERT_CACHE_LOCK:
+        entry = _convert_cache.get(cache_key)
+        if entry is not None and entry[0] == markdown:
+            _convert_cache.move_to_end(cache_key)
+            _convert_cache_hits += 1
+            return entry[1]
+
+    converted = md_to_html(markdown)
+    with _CONVERT_CACHE_LOCK:
+        # Another thread may have completed the same miss while we converted.
+        entry = _convert_cache.get(cache_key)
+        if entry is not None and entry[0] == markdown:
+            _convert_cache.move_to_end(cache_key)
+            _convert_cache_hits += 1
+            return entry[1]
+        if len(_convert_cache) >= CONVERT_CACHE_MAX_ENTRIES:
+            _convert_cache.popitem(last=False)
+        _convert_cache[cache_key] = (markdown, converted)
+        _convert_cache_misses += 1
+    return converted
+
+
+def get_convert_cache_stats():
+    """Return lightweight cache counters for diagnostics and profiling."""
+    with _CONVERT_CACHE_LOCK:
+        return {
+            "entries": len(_convert_cache),
+            "max_entries": CONVERT_CACHE_MAX_ENTRIES,
+            "hits": _convert_cache_hits,
+            "misses": _convert_cache_misses,
+        }
+
 GUIDE = """Markdown-to-HTML API — Usage Guide
 =====================================
 GET /register
@@ -405,12 +935,49 @@ GET /register
   Send the returned key on every billed request via the X-API-Key header.
   Without a key, billing falls back to your IP address (still 10 free calls).
 
+GET /keys/info
+  Headers: X-API-Key: ***
+  Returns: {"api_key":"mk_...","status":"active","plan":"free",
+            "usage":{"calls_made":N,"free_tier_limit":10},
+            "remaining_free_calls":N}
+  Shows the authenticated key's plan and free-tier usage without billing a call.
+
+POST /keys/revoke
+  Headers: X-API-Key: ***
+  Permanently revokes the authenticated API key. Subsequent requests using it
+  return 401. This operation is idempotent while the key is active.
+
+POST /keys/rotate
+  Headers: X-API-Key: ***
+  Atomically revokes the current key and returns a newly generated API key.
+  The replacement starts with a fresh free-tier allowance.
+
 POST /convert
   Headers: optional X-API-Key: ***
   Body: raw markdown text (Content-Type: text/plain or application/json {"markdown": "..."})
   Returns: {"html": "<converted html string>", "billing": {...}}
   Supported: headings, bold, italic, links, inline/block code, unordered lists.
   Free tier: 10 free calls per client (IP or API key). Then 402 + LTC wallet.
+
+POST /markdown/lint
+  Body: raw Markdown or application/json {"markdown": "..."}
+  Returns: {"valid": true, "warnings": [...], "line_count": N, "billing": {...}}
+  Reports malformed headings/lists, unclosed code or inline-code spans, unmatched
+  brackets, and malformed links. Syntax errors have severity "error".
+
+POST /html/minify
+  Body: raw HTML or application/json {"html": "<source>"}
+  Returns: {"html": "<minified>", "minified": "<minified>",
+            "original_chars": N, "minified_chars": N, "reduction_pct": float,
+            "billing": {...}}
+  Removes comments and collapses safe whitespace while preserving pre/textarea text.
+
+POST /table/parse
+  Body: raw Markdown table or application/json {"markdown": "| A | B |\\n| --- | --- |"}
+  Returns: {"headers": [...], "rows": [{...}], "alignments": [...],
+            "row_count": N, "column_count": N, "billing": {...}}
+  Parses the first pipe table and supports escaped pipes plus left/center/right
+  alignment markers. 400 if no valid table is found.
 
 POST /sanitize
   Headers: optional X-API-Key: ***
@@ -427,6 +994,20 @@ POST /batch
   Converts up to 50 markdown strings in one request. Billed per item
   (1 billing call per item in the batch). If the free tier is exhausted mid-batch,
   returns 402 with the partial_results converted so far.
+
+POST /webhook/register
+  Headers: optional X-API-Key: ***
+  Body: application/json {"callback_url": "https://example.com/md2html-hook"}
+  Registers (or replaces) the callback for the current API key or client IP.
+  The callback receives a POST with {"event": "batch.completed", "status":
+  "completed", "count": N, "results": [...], "timestamp": N} after a
+  successful /batch conversion. The legacy "url" field is also accepted.
+
+POST /webhook/test
+  Headers: optional X-API-Key: ***
+  Body: empty or application/json {"callback_url": "https://example.com/hook"}
+  Sends a {"event": "webhook.test", ...} payload to the registered callback.
+  Supplying callback_url/url tests a URL without changing the registration.
 
 POST /minify
   Body: application/json {"code": "<source>", "type": "html|css|js"}
@@ -483,6 +1064,9 @@ GET /docs     -> this guide
 GET /pricing  -> {"free_tier": {...}, "paid_tier": {...}, "rate_limit": {...}}
 GET /payment  -> {"wallet_address": "...", "currency": "LTC"}
 GET /usage    -> {"calls_made": N, "remaining": N}
+GET /keys/info -> authenticated key plan and usage (X-API-Key required)
+POST /keys/revoke -> revoke the authenticated key (X-API-Key required)
+POST /keys/rotate -> replace the authenticated key (X-API-Key required)
 GET /stats    -> {"total_calls": N, "unique_ips": N, ...}
 
 Rate limit: 30 requests/minute per IP. Max body: 1MB.
@@ -490,8 +1074,13 @@ All POST endpoints share the same free tier (10 free calls per client — IP or 
 
 Examples:
   curl -X POST http://localhost:8777/convert -H "Content-Type: application/json" -d '{"markdown": "# Hello **world**"}'
+  curl -X POST http://localhost:8777/markdown/lint -H "Content-Type: application/json" -d '{"markdown": "# Hello\n\n```\ncode"}'
+  curl -X POST http://localhost:8777/html/minify -H "Content-Type: application/json" -d '{"html": "<div>  <!-- comment --> hello </div>"}'
+  curl -X POST http://localhost:8777/table/parse -H "Content-Type: application/json" -d '{"markdown": "| Name | Age |\\n| --- | ---: |\\n| Ada | 36 |"}'
   curl -X POST http://localhost:8777/sanitize -H "Content-Type: application/json" -d '{"markdown": "# Hi <script>alert(1)</script>"}'
   curl -X POST http://localhost:8777/batch -H "Content-Type: application/json" -d '{"items": ["# A", "## B"]}'
+  curl -X POST http://localhost:8777/webhook/register -H "Content-Type: application/json" -d '{"callback_url":"https://example.com/md2html-hook"}'
+  curl -X POST http://localhost:8777/webhook/test
   curl -X POST http://localhost:8777/json/prettify -H "Content-Type: application/json" -d '{"json":"{\"a\":1,\"b\":2}"}'
   curl -X POST http://localhost:8777/text/stats -H "Content-Type: application/json" -d '{"text":"The quick brown fox"}'
   curl -X POST http://localhost:8777/slug -H "Content-Type: application/json" -d '{"title":"Café — Menus & Drinks!"}'
@@ -559,6 +1148,48 @@ SWAGGER_SPEC = {
                     "html": {"type": "string"},
                     "billing": {"$ref": "#/components/schemas/Billing"},
                     "warning": {"type": "string"},
+                },
+            },
+            "MarkdownLintResponse": {
+                "type": "object",
+                "properties": {
+                    "valid": {"type": "boolean"},
+                    "warnings": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "line": {"type": "integer"},
+                                "code": {"type": "string"},
+                                "message": {"type": "string"},
+                                "severity": {"type": "string", "enum": ["warning", "error"]},
+                            },
+                        },
+                    },
+                    "line_count": {"type": "integer"},
+                    "billing": {"$ref": "#/components/schemas/Billing"},
+                },
+            },
+            "HtmlMinifyResponse": {
+                "type": "object",
+                "properties": {
+                    "html": {"type": "string"},
+                    "minified": {"type": "string"},
+                    "original_chars": {"type": "integer"},
+                    "minified_chars": {"type": "integer"},
+                    "reduction_pct": {"type": "number"},
+                    "billing": {"$ref": "#/components/schemas/Billing"},
+                },
+            },
+            "TableParseResponse": {
+                "type": "object",
+                "properties": {
+                    "headers": {"type": "array", "items": {"type": "string"}},
+                    "rows": {"type": "array", "items": {"type": "object"}},
+                    "alignments": {"type": "array", "items": {"type": "string", "nullable": True}},
+                    "row_count": {"type": "integer"},
+                    "column_count": {"type": "integer"},
+                    "billing": {"$ref": "#/components/schemas/Billing"},
                 },
             },
             "JsonPrettifyResponse": {
@@ -688,6 +1319,36 @@ SWAGGER_SPEC = {
                 "responses": {"200": {"description": "New API key + wallet info", "content": {"application/json": {"schema": {"type": "object", "properties": {"api_key": {"type": "string"}, "wallet_address": {"type": "string"}, "free_tier_limit": {"type": "integer"}, "calls_made": {"type": "integer"}, "remaining": {"type": "integer"}}}}}}},
             }
         },
+        "/keys/info": {
+            "get": {
+                "summary": "Show the authenticated key's plan and usage",
+                "security": [{"ApiKeyAuth": []}],
+                "responses": {
+                    "200": {"description": "Key plan and free-tier usage"},
+                    "401": {"description": "Missing, invalid, or revoked API key"},
+                },
+            }
+        },
+        "/keys/revoke": {
+            "post": {
+                "summary": "Revoke the authenticated API key",
+                "security": [{"ApiKeyAuth": []}],
+                "responses": {
+                    "200": {"description": "Key revoked"},
+                    "401": {"description": "Missing, invalid, or revoked API key"},
+                },
+            }
+        },
+        "/keys/rotate": {
+            "post": {
+                "summary": "Rotate the authenticated API key",
+                "security": [{"ApiKeyAuth": []}],
+                "responses": {
+                    "200": {"description": "New key; previous key invalidated"},
+                    "401": {"description": "Missing, invalid, or revoked API key"},
+                },
+            }
+        },
         "/convert": {
             "post": {
                 "summary": "Convert Markdown to HTML",
@@ -701,6 +1362,54 @@ SWAGGER_SPEC = {
                 },
                 "responses": {
                     "200": {"description": "Converted HTML", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ConvertResponse"}}}},
+                    "402": {"description": "Free tier exhausted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PaymentRequired"}}}},
+                    "429": {"description": "Rate limited", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RateLimited"}}}},
+                },
+            }
+        },
+        "/markdown/lint": {
+            "post": {
+                "summary": "Lint Markdown syntax and return warnings",
+                "security": [{"ApiKeyAuth": []}],
+                "requestBody": {"required": True, "content": {
+                    "text/plain": {"schema": {"type": "string"}},
+                    "application/json": {"schema": {"type": "object", "properties": {"markdown": {"type": "string"}}}},
+                }},
+                "responses": {
+                    "200": {"description": "Markdown lint result", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/MarkdownLintResponse"}}}},
+                    "400": {"description": "Invalid request body"},
+                    "402": {"description": "Free tier exhausted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PaymentRequired"}}}},
+                    "429": {"description": "Rate limited", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RateLimited"}}}},
+                },
+            }
+        },
+        "/html/minify": {
+            "post": {
+                "summary": "Minify HTML source",
+                "security": [{"ApiKeyAuth": []}],
+                "requestBody": {"required": True, "content": {
+                    "text/plain": {"schema": {"type": "string"}},
+                    "application/json": {"schema": {"type": "object", "properties": {"html": {"type": "string"}}}},
+                }},
+                "responses": {
+                    "200": {"description": "Minified HTML", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HtmlMinifyResponse"}}}},
+                    "400": {"description": "Invalid request body"},
+                    "402": {"description": "Free tier exhausted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PaymentRequired"}}}},
+                    "429": {"description": "Rate limited", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RateLimited"}}}},
+                },
+            }
+        },
+        "/table/parse": {
+            "post": {
+                "summary": "Parse a Markdown pipe table into JSON",
+                "security": [{"ApiKeyAuth": []}],
+                "requestBody": {"required": True, "content": {
+                    "text/plain": {"schema": {"type": "string"}},
+                    "application/json": {"schema": {"type": "object", "properties": {"markdown": {"type": "string"}, "table": {"type": "string"}}}},
+                }},
+                "responses": {
+                    "200": {"description": "Parsed table", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/TableParseResponse"}}}},
+                    "400": {"description": "Invalid Markdown table"},
                     "402": {"description": "Free tier exhausted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PaymentRequired"}}}},
                     "429": {"description": "Rate limited", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RateLimited"}}}},
                 },
@@ -877,6 +1586,10 @@ SWAGGER_SPEC = {
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
+    # HTTP/1.1 enables persistent connections; every response below includes
+    # Content-Length, so clients can safely reuse the socket.
+    protocol_version = "HTTP/1.1"
+
     def log_message(self, *a): pass
 
     def send(self, code, body, ctype="application/json"):
@@ -891,6 +1604,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
         self.send_header("Access-Control-Max-Age", "86400")
+        if self.close_connection:
+            self.send_header("Connection", "close")
+        else:
+            self.send_header("Connection", "keep-alive")
+            self.send_header("Keep-Alive", "timeout=5, max=100")
         self.end_headers()
         self.wfile.write(data)
 
@@ -905,6 +1623,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
             self.send_header("Access-Control-Max-Age", "86400")
+            if self.close_connection:
+                self.send_header("Connection", "close")
+            else:
+                self.send_header("Connection", "keep-alive")
+                self.send_header("Keep-Alive", "timeout=5, max=100")
             self.end_headers()
             log_call(self.path, client_ip, 204, time.time() - t0)
         except Exception:
@@ -931,7 +1654,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     "uptime": f"{int(uptime // 86400)}d {int((uptime % 86400) // 3600)}h {int((uptime % 3600) // 60)}m {int(uptime % 60)}s",
                     "port": PORT,
                     "timestamp": int(time.time()),
-                    "endpoints": ["/health", "/register", "/convert", "/sanitize", "/batch", "/minify", "/html/extract", "/url/shorten", "/cron/parse", "/regex/test", "/json/prettify", "/text/stats", "/slug", "/docs", "/pricing", "/payment", "/usage", "/stats"]
+                    "endpoints": ["/health", "/register", "/keys/info", "/keys/revoke", "/keys/rotate", "/convert", "/markdown/lint", "/html/minify", "/table/parse", "/sanitize", "/batch", "/webhook/register", "/webhook/test", "/minify", "/html/extract", "/url/shorten", "/cron/parse", "/regex/test", "/json/prettify", "/text/stats", "/slug", "/docs", "/pricing", "/payment", "/usage", "/stats"]
                 }))
                 log_call("/health", client_ip, 200, time.time() - t0)
             elif self.path == "/swagger.json":
@@ -971,8 +1694,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 reg = register_client(ip=client_ip)
                 self.send(200, json.dumps(reg))
                 log_call("/register", client_ip, 200, time.time() - t0)
+            elif self.path == "/keys/info":
+                key, error = _require_managed_key(self)
+                if error:
+                    self.send(401, json.dumps(error))
+                    log_call("/keys/info", client_ip, 401, time.time() - t0)
+                else:
+                    self.send(200, json.dumps(key_info(key)))
+                    log_call("/keys/info", client_ip, 200, time.time() - t0)
             elif self.path == "/usage":
-                from billing import check_usage
+                if _is_revoked_key(self):
+                    self.send(401, json.dumps({"error": "API key has been revoked"}))
+                    log_call("/usage", client_ip, 401, time.time() - t0)
+                    return
                 cid = billing_client_id(self)
                 usage = check_usage(cid)
                 self.send(200, json.dumps({
@@ -1044,6 +1778,179 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 log_call(path, client_ip, 429, time.time() - t0)
                 return
 
+            if _is_revoked_key(self):
+                self.send(401, json.dumps({"error": "API key has been revoked"}))
+                log_call(path, client_ip, 401, time.time() - t0)
+                return
+
+            # ---- /keys/revoke: invalidate the authenticated key ------------
+            if path == "/keys/revoke":
+                key, error = _require_managed_key(self)
+                if error:
+                    self.send(401, json.dumps(error))
+                    log_call(path, client_ip, 401, time.time() - t0)
+                    return
+                revoke_key(key)
+                self.send(200, json.dumps({
+                    "api_key": key,
+                    "revoked": True,
+                    "message": "API key revoked.",
+                }))
+                log_call(path, client_ip, 200, time.time() - t0)
+                return
+
+            # ---- /keys/rotate: replace the authenticated key ---------------
+            if path == "/keys/rotate":
+                key, error = _require_managed_key(self)
+                if error:
+                    self.send(401, json.dumps(error))
+                    log_call(path, client_ip, 401, time.time() - t0)
+                    return
+                new_key = rotate_key(key, ip=client_ip)
+                if not new_key:
+                    self.send(401, json.dumps({"error": "API key has been revoked"}))
+                    log_call(path, client_ip, 401, time.time() - t0)
+                    return
+                response = key_info(new_key)
+                response.update({
+                    "previous_key": key,
+                    "rotated": True,
+                    "message": "API key rotated; the previous key is no longer valid.",
+                })
+                self.send(200, json.dumps(response))
+                log_call(path, client_ip, 200, time.time() - t0)
+                return
+
+            # ---- /webhook/register: save a callback for this client --------
+            if path == "/webhook/register":
+                raw, status, err = self._read_body()
+                if raw is None:
+                    self.send(status, err)
+                    log_call(path, client_ip, status, time.time() - t0)
+                    return
+                try:
+                    payload = json.loads(raw)
+                except (TypeError, ValueError):
+                    self.send(400, json.dumps({
+                        "error": "Invalid JSON",
+                        "message": 'POST {"callback_url": "https://example.com/md2html-hook"}'
+                    }))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                if not isinstance(payload, dict):
+                    self.send(400, json.dumps({"error": "Request body must be a JSON object"}))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                callback_url = payload.get("callback_url", payload.get("url"))
+                try:
+                    callback_url = register_webhook(billing_client_id(self), callback_url)
+                except ValueError as exc:
+                    self.send(400, json.dumps({"error": "Invalid callback URL", "message": str(exc)}))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                self.send(200, json.dumps({
+                    "registered": True,
+                    "callback_url": callback_url,
+                    "url": callback_url,
+                    "message": "Webhook registered for batch completion callbacks.",
+                }))
+                log_call(path, client_ip, 200, time.time() - t0)
+                return
+
+            # ---- /webhook/test: send a test event to the registered callback -
+            if path == "/webhook/test":
+                payload = {}
+                try:
+                    length = int(self.headers.get("Content-Length", 0))
+                except (TypeError, ValueError):
+                    self.send(400, json.dumps({"error": "Invalid Content-Length"}))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                if length > 0:
+                    raw, status, err = self._read_body()
+                    if raw is None:
+                        self.send(status, err)
+                        log_call(path, client_ip, status, time.time() - t0)
+                        return
+                    try:
+                        payload = json.loads(raw)
+                    except (TypeError, ValueError):
+                        self.send(400, json.dumps({"error": "Invalid JSON"}))
+                        log_call(path, client_ip, 400, time.time() - t0)
+                        return
+                    if not isinstance(payload, dict):
+                        self.send(400, json.dumps({"error": "Request body must be a JSON object"}))
+                        log_call(path, client_ip, 400, time.time() - t0)
+                        return
+                client_id = billing_client_id(self)
+                target = payload.get("callback_url", payload.get("url"))
+                if target is not None:
+                    try:
+                        target = _validate_webhook_url(target)
+                    except ValueError as exc:
+                        self.send(400, json.dumps({"error": "Invalid callback URL", "message": str(exc)}))
+                        log_call(path, client_ip, 400, time.time() - t0)
+                        return
+                else:
+                    target = _get_webhook(client_id)
+                if not target:
+                    self.send(404, json.dumps({
+                        "error": "No webhook registered",
+                        "message": "Register a callback with POST /webhook/register first.",
+                    }))
+                    log_call(path, client_ip, 404, time.time() - t0)
+                    return
+                event = {
+                    "event": "webhook.test",
+                    "status": "test",
+                    "timestamp": int(time.time()),
+                }
+                delivery = _post_webhook(target, event)
+                response = dict(event)
+                response.update(delivery)
+                response["callback_url"] = target
+                response_status = 200 if delivery.get("delivered") else 502
+                self.send(response_status, json.dumps(response))
+                log_call(path, client_ip, response_status, time.time() - t0)
+                return
+
+            # ---- /register: mint an API key from signup JSON ---------------
+            if path == "/register":
+                raw, status, err = self._read_body()
+                if raw is None:
+                    self.send(status, err)
+                    log_call(path, client_ip, status, time.time() - t0)
+                    return
+                try:
+                    payload = json.loads(raw)
+                except (TypeError, ValueError):
+                    self.send(400, json.dumps({
+                        "error": "Invalid JSON",
+                        "message": 'POST application/json {"email": "you@example.com", "plan": "free"}'
+                    }))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                if not isinstance(payload, dict) or "email" not in payload or "plan" not in payload:
+                    self.send(400, json.dumps({
+                        "error": "Missing \'email\' or \'plan\' field",
+                        "message": 'POST {"email": "you@example.com", "plan": "free"}'
+                    }))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                email = payload["email"]
+                plan = payload["plan"]
+                if not isinstance(email, str) or not email.strip() or not isinstance(plan, str) or not plan.strip():
+                    self.send(400, json.dumps({
+                        "error": "\'email\' and \'plan\' must be non-empty strings"
+                    }))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                reg = register_client(ip=client_ip)
+                reg.update({"email": email.strip(), "plan": plan.strip()})
+                self.send(200, json.dumps(reg))
+                log_call(path, client_ip, 200, time.time() - t0)
+                return
+
             # ---- /convert: markdown -> HTML ---------------------------------
             if path == "/convert":
                 raw, status, err = self._read_body()
@@ -1084,8 +1991,165 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     }))
                     log_call(path, client_ip, 200, time.time() - t0)
                     return
-                html = md_to_html(md)
+                html = cached_md_to_html(md)
                 self.send(200, json.dumps({"html": html, "billing": bill}))
+                log_call(path, client_ip, 200, time.time() - t0)
+                return
+
+            # ---- /markdown/lint: validate Markdown and return warnings --------
+            if path == "/markdown/lint":
+                raw, status, err = self._read_body()
+                if raw is None:
+                    self.send(status, err)
+                    log_call(path, client_ip, status, time.time() - t0)
+                    return
+                if len(raw) > 50 * 1024:
+                    self.send(413, json.dumps({
+                        "error": "Markdown input too large",
+                        "max_bytes": 50 * 1024,
+                        "received_bytes": len(raw),
+                    }))
+                    log_call(path, client_ip, 413, time.time() - t0)
+                    return
+                if self.headers.get("Content-Type", "").startswith("application/json"):
+                    try:
+                        payload = json.loads(raw)
+                    except (TypeError, ValueError):
+                        self.send(400, json.dumps({
+                            "error": "Invalid JSON",
+                            "message": 'POST {"markdown": "# Heading"}',
+                        }))
+                        log_call(path, client_ip, 400, time.time() - t0)
+                        return
+                    if not isinstance(payload, dict) or "markdown" not in payload:
+                        self.send(400, json.dumps({
+                            "error": "Missing 'markdown' field",
+                            "message": 'POST {"markdown": "# Heading"}',
+                        }))
+                        log_call(path, client_ip, 400, time.time() - t0)
+                        return
+                    markdown = payload.get("markdown")
+                else:
+                    markdown = raw
+                if markdown is None:
+                    self.send(400, json.dumps({"error": "'markdown' is null"}))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                if not isinstance(markdown, str):
+                    markdown = str(markdown)
+                bill = record_call(billing_client_id(self))
+                if bill.get("status") == 402:
+                    self.send(402, json.dumps(bill))
+                    log_call(path, client_ip, 402, time.time() - t0)
+                    return
+                result = lint_markdown(markdown)
+                result["billing"] = bill
+                self.send(200, json.dumps(result, ensure_ascii=False))
+                log_call(path, client_ip, 200, time.time() - t0)
+                return
+
+            # ---- /html/minify: minify HTML source ----------------------------
+            if path == "/html/minify":
+                raw, status, err = self._read_body()
+                if raw is None:
+                    self.send(status, err)
+                    log_call(path, client_ip, status, time.time() - t0)
+                    return
+                if self.headers.get("Content-Type", "").startswith("application/json"):
+                    try:
+                        payload = json.loads(raw)
+                    except (TypeError, ValueError):
+                        self.send(400, json.dumps({
+                            "error": "Invalid JSON",
+                            "message": 'POST {"html": "<div> content </div>"}',
+                        }))
+                        log_call(path, client_ip, 400, time.time() - t0)
+                        return
+                    if not isinstance(payload, dict) or "html" not in payload:
+                        self.send(400, json.dumps({
+                            "error": "Missing 'html' field",
+                            "message": 'POST {"html": "<div> content </div>"}',
+                        }))
+                        log_call(path, client_ip, 400, time.time() - t0)
+                        return
+                    source = payload.get("html")
+                else:
+                    source = raw
+                if source is None:
+                    self.send(400, json.dumps({"error": "'html' is null"}))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                if not isinstance(source, str):
+                    source = str(source)
+                bill = record_call(billing_client_id(self))
+                if bill.get("status") == 402:
+                    self.send(402, json.dumps(bill))
+                    log_call(path, client_ip, 402, time.time() - t0)
+                    return
+                minified = minify_html(source)
+                original_chars = len(source)
+                minified_chars = len(minified)
+                self.send(200, json.dumps({
+                    "html": minified,
+                    "minified": minified,
+                    "original_chars": original_chars,
+                    "minified_chars": minified_chars,
+                    "reduction_pct": round((1 - minified_chars / original_chars) * 100, 1) if original_chars else 0,
+                    "billing": bill,
+                }, ensure_ascii=False))
+                log_call(path, client_ip, 200, time.time() - t0)
+                return
+
+            # ---- /table/parse: Markdown pipe table to JSON -------------------
+            if path == "/table/parse":
+                raw, status, err = self._read_body()
+                if raw is None:
+                    self.send(status, err)
+                    log_call(path, client_ip, status, time.time() - t0)
+                    return
+                if self.headers.get("Content-Type", "").startswith("application/json"):
+                    try:
+                        payload = json.loads(raw)
+                    except (TypeError, ValueError):
+                        self.send(400, json.dumps({
+                            "error": "Invalid JSON",
+                            "message": 'POST {"markdown": "| Name | Value |\\n| --- | --- |"}',
+                        }))
+                        log_call(path, client_ip, 400, time.time() - t0)
+                        return
+                    if not isinstance(payload, dict) or ("markdown" not in payload and "table" not in payload):
+                        self.send(400, json.dumps({
+                            "error": "Missing 'markdown' field",
+                            "message": 'POST {"markdown": "| Name | Value |\\n| --- | --- |"}',
+                        }))
+                        log_call(path, client_ip, 400, time.time() - t0)
+                        return
+                    markdown = payload.get("markdown", payload.get("table"))
+                else:
+                    markdown = raw
+                if markdown is None:
+                    self.send(400, json.dumps({"error": "'markdown' is null"}))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                if not isinstance(markdown, str):
+                    markdown = str(markdown)
+                bill = record_call(billing_client_id(self))
+                if bill.get("status") == 402:
+                    self.send(402, json.dumps(bill))
+                    log_call(path, client_ip, 402, time.time() - t0)
+                    return
+                try:
+                    result = parse_markdown_table(markdown)
+                except ValueError as ve:
+                    self.send(400, json.dumps({
+                        "error": "Invalid Markdown table",
+                        "message": str(ve),
+                        "billing": bill,
+                    }, ensure_ascii=False))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                result["billing"] = bill
+                self.send(200, json.dumps(result, ensure_ascii=False))
                 log_call(path, client_ip, 200, time.time() - t0)
                 return
 
@@ -1224,6 +2288,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     "count": len(results),
                     "billing": last_bill
                 }))
+                _notify_webhook_async(cid, {
+                    "event": "batch.completed",
+                    "status": "completed",
+                    "count": len(results),
+                    "results": results,
+                    "timestamp": int(time.time()),
+                })
                 log_call(path, client_ip, 200, time.time() - t0)
                 return
 
@@ -1268,18 +2339,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     }))
                     log_call(path, client_ip, 400, time.time() - t0)
                     return
-                if code.strip() == "":
-                    self.send(200, json.dumps({
-                        "minified": "",
-                        "original_chars": 0,
-                        "minified_chars": 0,
-                        "reduction_pct": 0,
-                        "type": src_type,
-                        "warning": "Empty input — nothing to minify.",
-                        "billing": None
-                    }))
-                    # Still bill for the call (even for empty input) by returning above;
-                    # but to be consistent with /convert, bill first then respond.
                 bill = record_call(billing_client_id(self))
                 if bill.get("status") == 402:
                     self.send(402, json.dumps(bill))
@@ -1645,10 +2704,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send(500, json.dumps({"error": "internal server error"}))
             log_call(path, client_ip, 500, time.time() - t0)
 
+class ReusableThreadingHTTPServer(http.server.ThreadingHTTPServer):
+    """Threaded HTTP/1.1 server with reusable sockets and daemon workers."""
+    allow_reuse_address = True
+    daemon_threads = True
+
+
 if __name__ == "__main__":
     print(f"Markdown-to-HTML API on http://0.0.0.0:{PORT}")
     print(f"  Rate limit: {RATE_LIMIT_MAX} req/{RATE_LIMIT_WINDOW}s per IP")
     print(f"  Body cap: {MAX_BODY} bytes")
     print(f"  Free tier: {FREE_TIER_LIMIT} calls, then 402 + LTC")
-    # Threaded server for better DoS resistance
-    http.server.ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+    # Threaded server for better DoS resistance and persistent HTTP/1.1 clients.
+    ReusableThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

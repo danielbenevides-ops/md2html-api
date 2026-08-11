@@ -1,7 +1,7 @@
 name: Deploy
 on:
   push:
-    branches: [main]
+    branches: [master]
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,9 +14,9 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /opt/md2html
-            git pull origin main
+            cd /home/ubuntu/md2html-api
+            git pull origin master
             pip install -r requirements.txt
             sudo systemctl restart md2html
-            sleep 2
-            sudo systemctl status md2html --no-pager
+            sleep 3
+            curl -fsS http://127.0.0.1:8777/health

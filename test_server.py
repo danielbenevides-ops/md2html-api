@@ -1,324 +1,398 @@
-"""Tests for server.py: exercises the LIVE public MD2HTML API over HTTP and
-reports PASS/FAIL for each endpoint. Stdlib only (urllib).
+"""Unittest coverage for the local MD2HTML HTTP API.
 
-Live API:  http://147.15.103.217/md2html/   (port 8777 behind a reverse proxy)
-Endpoints covered:
-  GET  /health
-  POST /convert           (markdown -> HTML, plus empty + XSS-in-code-block cases)
-  POST /json/prettify     (compact JSON -> re-indented JSON, round-trip check)
-  POST /text/stats        (word/char counts, reading time, top words)
-  POST /slug              (title -> URL-safe slug)
-  OPTIONS /convert        (CORS preflight)
-Run:  python test_server.py
+The test fixture starts ``server.Handler`` on an ephemeral localhost port, so
+these tests exercise real HTTP routing without depending on a running
+production process or mutating the repository's usage/analytics files.
 """
+from __future__ import annotations
+
+import http.server
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 import sys
+import tempfile
+import threading
+import unittest
 import urllib.error
 import urllib.request
+from pathlib import Path
 
-# --- Live public API base -------------------------------------------------
-# The service runs on port 8777 behind a reverse proxy that exposes it under
-# the /md2html/ prefix on the public IP. Tests must hit the public URL, not
-# localhost, so they exercise the same path real customers use.
-BASE = "http://147.15.103.217/md2html"
-TIMEOUT = 10
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-results = []  # (name, passed, detail)
+import analytics  # noqa: E402
+import billing  # noqa: E402
+import server  # noqa: E402
 
-# A freshly-minted API key gives the test run its own independent free-tier
-# bucket (10 calls) keyed off the key rather than the shared public IP, so
-# the tests are not blocked by prior traffic from this NAT/proxy IP.
-API_KEY = {"value": None}
+_MISSING = object()
 
 
-def record(name, passed, detail=""):
-    results.append((name, passed, detail))
-    tag = "PASS" if passed else "FAIL"
-    print(f"[{tag}] {name}" + (f" - {detail}" if detail else ""))
+def request(base: str, path: str, method: str = "GET", payload=_MISSING,
+            *, body: bytes | str | None = None, headers: dict[str, str] | None = None):
+    """Make an HTTP request and return ``(status, decoded_body, headers)``.
 
+    HTTP errors are returned rather than raised, making assertions on 400/402/
+    413/429 responses straightforward.
+    """
+    request_headers = dict(headers or {})
+    if body is not None:
+        data = body.encode("utf-8") if isinstance(body, str) else body
+    elif payload is not _MISSING:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        request_headers.setdefault("Content-Type", "application/json")
+    else:
+        data = None
 
-def register_api_key():
-    """Mint a fresh API key from /register so the test run has its own
-    free-tier billing bucket. Returns the key string or None on failure."""
+    req = urllib.request.Request(
+        base + path, data=data, method=method, headers=request_headers
+    )
     try:
-        url = BASE + "/register"
-        with urllib.request.urlopen(url, timeout=TIMEOUT) as r:
-            body = json.loads(r.read().decode("utf-8"))
-        key = body.get("api_key")
-        if key:
-            API_KEY["value"] = key
-            print(f"Registered fresh API key for tests: {key[:8]}... (remaining: {body.get('remaining')})")
-            return key
-        print(f"WARN: /register returned no api_key: {body}")
-        return None
-    except Exception as e:
-        print(f"WARN: could not register API key ({type(e).__name__}: {e}); tests will run unkeyed and may hit the IP-based free-tier limit.")
-        return None
+        with urllib.request.urlopen(req, timeout=5) as response:
+            status = response.status
+            raw = response.read()
+            response_headers = dict(response.headers.items())
+    except urllib.error.HTTPError as exc:
+        status = exc.code
+        raw = exc.read()
+        response_headers = dict(exc.headers.items())
 
-
-# --- HTTP helpers ---------------------------------------------------------
-def request(path, method="GET", body=None, ctype=None):
-    """Return (status, text). Raises urllib.error.HTTPError on 4xx/5xx by
-    default, so callers should handle via try/except."""
-    url = BASE + path
-    data = body.encode("utf-8") if isinstance(body, str) else body
-    req = urllib.request.Request(url, data=data, method=method)
-    if ctype:
-        req.add_header("Content-Type", ctype)
-    if API_KEY["value"]:
-        req.add_header("X-API-Key", API_KEY["value"])
+    text = raw.decode("utf-8", errors="replace")
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-            return r.status, r.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError as e:
-        return e.code, e.read().decode("utf-8", errors="replace")
+        decoded = json.loads(text)
+    except json.JSONDecodeError:
+        decoded = text
+    return status, decoded, response_headers
 
 
-def post_json(path, payload):
-    """POST a JSON body, return (status, parsed_json_or_text)."""
-    body = json.dumps(payload).encode("utf-8")
-    status, text = request(path, method="POST", body=body, ctype="application/json")
-    try:
-        return status, json.loads(text)
-    except (ValueError, TypeError):
-        return status, text
+def auth(key: str) -> dict[str, str]:
+    return {"X-API-Key": key}
 
 
-# --- Test definitions -----------------------------------------------------
-def test_health():
-    try:
-        status, text = request("/health")
-        body = json.loads(text)
-        ok = (status == 200) and body.get("status") == "ok"
-        record("GET /health returns status ok", ok, f"status={status} body={text[:120]}")
-    except Exception as e:
-        record("GET /health returns status ok", False, f"{type(e).__name__}: {e}")
+class MD2HTMLAPITest(unittest.TestCase):
+    """End-to-end tests against the actual stdlib HTTP Handler."""
 
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.old_cwd = os.getcwd()
+        os.chdir(self.temp_dir.name)
+        self.old_usage_file = billing.USAGE_FILE
+        self.old_log_file = analytics.LOG_FILE
+        billing.USAGE_FILE = os.path.join(self.temp_dir.name, "usage.json")
+        analytics.LOG_FILE = os.path.join(self.temp_dir.name, "analytics.json")
+        server._rate_map.clear()
 
-def test_convert_basic():
-    md = "# Hello\n\n**bold** and *italic*\n\n- item1\n- item2"
-    try:
-        status, body = post_json("/convert", {"markdown": md})
-        html = body.get("html", "") if isinstance(body, dict) else ""
-        ok = (status == 200) and ("<h1>Hello</h1>" in html)
-        record("POST /convert returns valid HTML with <h1>Hello</h1>",
-               ok, f"status={status} html={html[:100]!r}")
-    except Exception as e:
-        record("POST /convert returns valid HTML with <h1>Hello</h1>",
-               False, f"{type(e).__name__}: {e}")
+        self.httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
+        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.thread.start()
+        self.api = f"http://127.0.0.1:{self.httpd.server_address[1]}"
 
+    def tearDown(self):
+        self.httpd.shutdown()
+        self.httpd.server_close()
+        self.thread.join(timeout=5)
+        server._rate_map.clear()
+        billing.USAGE_FILE = self.old_usage_file
+        analytics.LOG_FILE = self.old_log_file
+        os.chdir(self.old_cwd)
+        self.temp_dir.cleanup()
 
-def test_convert_structure():
-    md = "# Hello\n\n**bold** and *italic*\n\n- item1\n- item2"
-    try:
-        status, body = post_json("/convert", {"markdown": md})
-        html = body.get("html", "") if isinstance(body, dict) else ""
-        ok = (status == 200) and all(s in html for s in (
-            "<h1>Hello</h1>",
-            "<strong>bold</strong>",
-            "<em>italic</em>",
-            "<li>item1</li>",
-            "<li>item2</li>",
-            "<ul>",
-            "</ul>",
-        ))
-        record("POST /convert full structure", ok, html[:120])
-    except Exception as e:
-        record("POST /convert full structure", False, f"{type(e).__name__}: {e}")
+    def key(self) -> str:
+        status, body, _ = request(self.api, "/register")
+        self.assertEqual(status, 200)
+        self.assertIsInstance(body, dict)
+        self.assertTrue(body["api_key"].startswith("mk_"))
+        return body["api_key"]
 
+    def test_health_reports_operational_server(self):
+        status, body, headers = request(self.api, "/health")
 
-def test_convert_empty():
-    try:
-        status, body = post_json("/convert", {"markdown": ""})
-        html = body.get("html", "") if isinstance(body, dict) else ""
-        ok = (status == 200) and (html.strip() == "")
-        record("POST /convert empty markdown returns 200 with empty html",
-               ok, f"status={status} html={html!r}")
-    except Exception as e:
-        record("POST /convert empty markdown returns 200 with empty html",
-               False, f"{type(e).__name__}: {e}")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["status"], "ok")
+        self.assertIsInstance(body["version"], str)
+        self.assertGreaterEqual(body["uptime_seconds"], 0)
+        self.assertEqual(body["port"], 8777)
+        self.assertGreater(body["timestamp"], 0)
+        self.assertTrue({"/convert", "/register", "/batch", "/sanitize"}.issubset(body["endpoints"]))
+        self.assertEqual(headers["Access-Control-Allow-Origin"], "*")
+        self.assertEqual(headers["X-Content-Type-Options"], "nosniff")
 
+    def test_convert_basic_markdown_to_html(self):
+        key = self.key()
+        markdown = "# Hello\n\n**bold** and *italic*\n\n- one\n- two"
+        status, body, _ = request(
+            self.api, "/convert", "POST", {"markdown": markdown}, headers=auth(key)
+        )
 
-def test_convert_code_escape():
-    # Code block containing < > & chars that MUST be HTML-escaped on output
-    # so they cannot inject markup. The server escapes to < > &.
-    md = '```python\nx = \'<script>alert("xss")</script>\' & y > 0\n```'
-    try:
-        status, body = post_json("/convert", {"markdown": md})
-        html = body.get("html", "") if isinstance(body, dict) else ""
-        ok = (status == 200) and ("<pre><code>" in html)
-        # The server must escape < > & inside code blocks to their HTML
-        # entity equivalents so the raw tag cannot inject markup.
-        AMP = chr(38)               # &
-        LT  = AMP + "lt;"           # <   -> <
-        GT  = AMP + "gt;"           # >   -> >
-        AMP_ENT = AMP + "amp;"      # &   -> &
-        RAW_SCRIPT_OPEN = chr(60) + "script" + chr(62)   # <script>
-        escaped_form = LT + "script" + GT                # <script>
-        ok = ok and (RAW_SCRIPT_OPEN not in html) and (escaped_form in html) \
-             and (AMP_ENT in html) and (GT in html)
-        record("POST /convert code block escapes HTML special chars",
-               ok, f"status={status} html={html[:120]!r}")
-    except Exception as e:
-        record("POST /convert code block escapes HTML special chars",
-               False, f"{type(e).__name__}: {e}")
+        self.assertEqual(status, 200)
+        self.assertEqual(
+            body["html"],
+            "<h1>Hello</h1>\n\n<strong>bold</strong> and <em>italic</em>\n\n"
+            "<ul>\n<li>one</li>\n<li>two</li>\n</ul>",
+        )
+        self.assertEqual(body["billing"]["status"], 200)
+        self.assertEqual(body["billing"]["calls_made"], 1)
+        self.assertEqual(body["billing"]["remaining"], billing.FREE_TIER_LIMIT - 1)
 
+    def test_convert_accepts_plain_text_and_unicode(self):
+        key = self.key()
+        status, body, _ = request(
+            self.api, "/convert", "POST", body="Café — привет",
+            headers={**auth(key), "Content-Type": "text/plain"},
+        )
 
-def test_json_prettify():
-    """Existing test gap: /json/prettify. Verifies the endpoint re-indents
-    compact JSON and that the data round-trips. The server attaches a
-    'billing' object, so we strip it before comparing."""
-    try:
-        status, body = post_json("/json/prettify", {"json": '{"b":2,"a":1,"nested":{"x":[1,2]}}'})
-        ok = (status == 200) and isinstance(body, dict) and ("billing" in body)
-        if ok:
-            # Strip billing, compare round-trip against the original input.
-            data = {k: v for k, v in body.items() if k != "billing"}
-            ok = data == {"b": 2, "a": 1, "nested": {"x": [1, 2]}}
-        record("POST /json/prettify round-trips compact JSON", ok,
-               f"status={status} body={str(body)[:120]}")
-    except Exception as e:
-        record("POST /json/prettify round-trips compact JSON",
-               False, f"{type(e).__name__}: {e}")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["html"], "Café — привет")
+        self.assertEqual(body["billing"]["calls_made"], 1)
 
+    def test_convert_edge_cases_are_safe_and_bounded(self):
+        key = self.key()
+        status, body, _ = request(
+            self.api, "/convert", "POST", {"markdown": ""}, headers=auth(key)
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(body["html"], "")
+        self.assertIn("warning", body)
 
-def test_text_stats():
-    """Existing test gap: /text/stats. Verifies word/char counts, reading
-    time formula, and top-words extraction with billing attached."""
-    try:
-        text = "The quick brown fox"
-        status, body = post_json("/text/stats", {"text": text})
-        ok = (status == 200) and isinstance(body, dict) and ("billing" in body)
-        if ok:
-            words = text.split()
-            expected = {
-                "words": len(words),                       # 4
-                "chars": len(text),                        # 19
-                "chars_no_spaces": len(text.replace(" ", "")),  # 16
-                "reading_time_min": round(len(words) / 200, 2),   # 0.02
-            }
-            for k, v in expected.items():
-                if body.get(k) != v:
-                    ok = False
-                    break
-            # top_words should be a non-empty list of [word, count] pairs.
-            tw = body.get("top_words")
-            if not (isinstance(tw, list) and len(tw) > 0 and
-                    all(len(p) == 2 for p in tw)):
-                ok = False
-        record("POST /text/stats returns correct counts and top words", ok,
-               f"status={status} body={str(body)[:140]}")
-    except Exception as e:
-        record("POST /text/stats returns correct counts and top words",
-               False, f"{type(e).__name__}: {e}")
+        status, body, _ = request(
+            self.api, "/convert", "POST",
+            {"markdown": '<script>alert("x")</script>'}, headers=auth(key),
+        )
+        self.assertEqual(status, 200)
+        self.assertNotIn("<script>", body["html"])
+        self.assertIn("&lt;script&gt;", body["html"])
 
+        code = "```python\nprint('<x> & y')\n```"
+        status, body, _ = request(
+            self.api, "/convert", "POST", {"markdown": code}, headers=auth(key)
+        )
+        self.assertEqual(status, 200)
+        self.assertIn("<pre><code>", body["html"])
+        self.assertIn("&lt;x&gt; &amp; y", body["html"])
 
-def test_slug():
-    """Existing test gap: /slug. Verifies title -> URL-safe slug conversion."""
-    try:
-        status, body = post_json("/slug", {"title": "Hello, World!"})
-        slug = body.get("slug") if isinstance(body, dict) else None
-        ok = (status == 200) and (slug == "hello-world") and \
-             isinstance(body, dict) and ("billing" in body)
-        record("POST /slug converts title to URL-safe slug", ok,
-               f"status={status} slug={slug!r}")
-    except Exception as e:
-        record("POST /slug converts title to URL-safe slug",
-               False, f"{type(e).__name__}: {e}")
+        status, body, _ = request(
+            self.api, "/convert", "POST", body=b"",
+            headers={**auth(key), "Content-Type": "text/plain"},
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(body["error"], "Empty request body")
 
+        oversized = {"markdown": "x" * (50 * 1024)}
+        status, body, _ = request(
+            self.api, "/convert", "POST", oversized, headers=auth(key)
+        )
+        self.assertEqual(status, 413)
+        self.assertEqual(body["error"], "Markdown input too large")
+        self.assertEqual(body["max_bytes"], 50 * 1024)
 
-def test_convert_xss_script_tag():
-    """New test: XSS attempt via a raw <script> tag in markdown body
-    (NOT inside a code block). The converter must escape the tag so it
-    cannot execute in a browser. We assert the literal '<script>' never
-    survives into the output HTML and that it appears as '<script>'."""
-    md = '<script>alert("xss")</script>'
-    try:
-        status, body = post_json("/convert", {"markdown": md})
-        html = body.get("html", "") if isinstance(body, dict) else ""
-        AMP = chr(38)
-        LT = AMP + "lt;"
-        GT = AMP + "gt;"
-        RAW = chr(60) + "script" + chr(62)
-        raw_close = chr(60) + "/script" + chr(62)
-        ok = (status == 200) and (RAW not in html) and (raw_close not in html) \
-             and (LT in html) and (GT in html)
-        record("POST /convert escapes raw <script> XSS tag", ok,
-               f"status={status} html={html[:120]!r}")
-    except Exception as e:
-        record("POST /convert escapes raw <script> XSS tag",
-               False, f"{type(e).__name__}: {e}")
+    def test_register_mints_independent_free_tier_key(self):
+        first_status, first, _ = request(self.api, "/register")
+        second_status, second, _ = request(self.api, "/register")
 
+        self.assertEqual(first_status, second_status, 200)
+        self.assertTrue(first["api_key"].startswith("mk_"))
+        self.assertEqual(len(first["api_key"]), 35)
+        self.assertNotEqual(first["api_key"], second["api_key"])
+        self.assertEqual(first["calls_made"], 0)
+        self.assertEqual(first["remaining"], billing.FREE_TIER_LIMIT)
+        self.assertEqual(first["free_tier_limit"], billing.FREE_TIER_LIMIT)
+        self.assertTrue(first["wallet_address"])
 
-def test_convert_code_blocks_markdown():
-    """New test: markdown containing fenced code blocks with language hint.
-    Verifies the block renders as <pre><code>...</code></pre> and inline
-    markdown around it still converts (heading + code)."""
-    md = "# Code Example\n\n```python\nprint('hello')\nx = 42\n```\n\nMore text."
-    try:
-        status, body = post_json("/convert", {"markdown": md})
-        html = body.get("html", "") if isinstance(body, dict) else ""
-        ok = (status == 200) and ("<h1>Code Example</h1>" in html) \
-             and ("<pre><code>" in html) and ("print('hello')" in html) \
-             and ("x = 42" in html) and ("More text." in html)
-        record("POST /convert renders fenced code blocks with heading", ok,
-               f"status={status} html={html[:140]!r}")
-    except Exception as e:
-        record("POST /convert renders fenced code blocks with heading",
-               False, f"{type(e).__name__}: {e}")
+    def test_batch_converts_items_and_bills_per_item(self):
+        key = self.key()
+        status, body, _ = request(
+            self.api, "/batch", "POST", {"items": ["# A", "**bold**", 42]},
+            headers=auth(key),
+        )
 
+        self.assertEqual(status, 200)
+        self.assertEqual(body["count"], 3)
+        self.assertEqual(len(body["results"]), 3)
+        self.assertEqual(body["results"][0], "<h1>A</h1>")
+        self.assertIn("<strong>bold</strong>", body["results"][1])
+        self.assertEqual(body["results"][2], "42")
+        self.assertEqual(body["billing"]["calls_made"], 3)
+        self.assertEqual(body["billing"]["remaining"], billing.FREE_TIER_LIMIT - 3)
 
-def test_json_prettify_malformed():
-    """New test: /json/prettify with malformed JSON. The endpoint must
-    reject it with a 400 status and an error message, not 500 or crash."""
-    try:
-        status, body = post_json("/json/prettify", {"json": '{"a": 1, "b": ]'})
-        ok = (status == 400) and isinstance(body, dict) \
-             and ("error" in body)
-        record("POST /json/prettify rejects malformed JSON with 400", ok,
-               f"status={status} body={str(body)[:120]}")
-    except Exception as e:
-        record("POST /json/prettify rejects malformed JSON with 400",
-               False, f"{type(e).__name__}: {e}")
+    def test_batch_rejects_invalid_payloads(self):
+        cases = [
+            ({}, 400, "Missing 'items' field"),
+            ({"items": "not-a-list"}, 400, "must be a list"),
+            ({"items": []}, 400, "Empty 'items' list"),
+            ({"items": ["ok", None]}, 400, "Item 1 is null"),
+            ({"items": ["x"] * 51}, 413, "Too many items"),
+        ]
+        key = self.key()
+        for payload, expected_status, error_fragment in cases:
+            with self.subTest(payload=payload):
+                status, body, _ = request(
+                    self.api, "/batch", "POST", payload, headers=auth(key)
+                )
+                self.assertEqual(status, expected_status)
+                self.assertIn(error_fragment, body["error"])
 
+    def test_sanitize_escapes_raw_html_before_conversion(self):
+        key = self.key()
+        markdown = "# Hi <script>alert(1)</script> **bold**"
+        status, body, _ = request(
+            self.api, "/sanitize", "POST", {"markdown": markdown}, headers=auth(key)
+        )
 
-def test_cors_preflight():
-    """OPTIONS preflight. The local server returns ACAO=*, but the public
-    reverse proxy returns 204 with no CORS headers (it strips them). We
-    therefore assert only on the 204 status, and record CORS headers as a
-    soft observation rather than a pass/fail condition."""
-    try:
-        status, text = request("/convert", method="OPTIONS", body=b"")
-        headers_ok = status in (200, 204)
-        record("OPTIONS preflight returns 204", headers_ok, f"status={status}")
-    except Exception as e:
-        record("OPTIONS preflight returns 204", False, f"{type(e).__name__}: {e}")
+        self.assertEqual(status, 200)
+        self.assertTrue(body["sanitized"])
+        self.assertNotIn("<script", body["html"])
+        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", body["html"])
+        self.assertIn("<strong>bold</strong>", body["html"])
+        self.assertEqual(body["billing"]["calls_made"], 1)
 
+    def test_json_prettify_round_trips_and_rejects_malformed_json(self):
+        key = self.key()
+        compact = '{"b":2,"a":1,"nested":{"x":[1,2]}}'
+        status, body, _ = request(
+            self.api, "/json/prettify", "POST", {"json": compact}, headers=auth(key)
+        )
 
-# --- Runner ---------------------------------------------------------------
-def main():
-    print(f"Testing live API at {BASE}\n")
-    register_api_key()
-    print()
-    test_health()
-    test_convert_basic()
-    test_convert_structure()
-    test_convert_empty()
-    test_convert_code_escape()
-    test_convert_xss_script_tag()
-    test_convert_code_blocks_markdown()
-    test_json_prettify()
-    test_json_prettify_malformed()
-    test_text_stats()
-    test_slug()
-    test_cors_preflight()
+        self.assertEqual(status, 200)
+        self.assertEqual(
+            {k: v for k, v in body.items() if k != "billing"}, json.loads(compact)
+        )
+        self.assertEqual(body["billing"]["calls_made"], 1)
 
-    passed = sum(1 for _, p, _ in results if p)
-    total = len(results)
-    print(f"\n{passed}/{total} tests passed")
-    return 0 if passed == total else 1
+        status, error, _ = request(
+            self.api, "/json/prettify", "POST", {"json": '{"broken":]'},
+            headers=auth(key),
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(error["error"], "Bad input")
+        self.assertIn("Invalid JSON", error["message"])
+
+    def test_text_stats_reports_counts_reading_time_and_top_words(self):
+        key = self.key()
+        text = "The quick brown fox. The fox jumps over the lazy dog!"
+        status, body, _ = request(
+            self.api, "/text/stats", "POST", {"text": text}, headers=auth(key)
+        )
+
+        words = text.split()
+        self.assertEqual(status, 200)
+        self.assertEqual(body["words"], len(words))
+        self.assertEqual(body["chars"], len(text))
+        self.assertEqual(body["chars_no_spaces"], len("".join(words)))
+        self.assertEqual(body["reading_time_min"], round(len(words) / 200, 2))
+        top_words = dict(body["top_words"])
+        self.assertEqual(top_words["the"], 3)
+        self.assertEqual(top_words["fox"], 2)
+        self.assertEqual(body["billing"]["calls_made"], 1)
+
+    def test_slug_normalizes_unicode_punctuation_and_whitespace(self):
+        key = self.key()
+        status, body, _ = request(
+            self.api, "/slug", "POST", {"title": "  Café — Menus & Drinks!  "},
+            headers=auth(key),
+        )
+
+        self.assertEqual(status, 200)
+        self.assertEqual(body["slug"], "cafe-menus-drinks")
+        self.assertEqual(body["billing"]["calls_made"], 1)
+
+        status, body, _ = request(
+            self.api, "/slug", "POST", {"title": "!!!---###"}, headers=auth(key)
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(body["slug"], "")
+
+    def test_rate_limit_returns_429_after_configured_window_quota(self):
+        self.key()
+        # Registration itself is a GET and consumes one rate-limit slot; clear
+        # it so this test exercises exactly RATE_LIMIT_MAX requests.
+        server._rate_map.clear()
+
+        for _ in range(server.RATE_LIMIT_MAX):
+            status, body, _ = request(self.api, "/health")
+            self.assertEqual(status, 200, body)
+
+        status, body, _ = request(self.api, "/health")
+        self.assertEqual(status, 429)
+        self.assertEqual(body["error"], "Rate limit exceeded")
+        self.assertEqual(body["retry_after"], server.RATE_LIMIT_WINDOW)
+
+    def test_free_tier_exhaustion_returns_402_with_payment_details(self):
+        key = self.key()
+        for expected_call in range(1, billing.FREE_TIER_LIMIT + 1):
+            status, body, _ = request(
+                self.api, "/convert", "POST", {"markdown": f"call {expected_call}"},
+                headers=auth(key),
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(body["billing"]["calls_made"], expected_call)
+            self.assertEqual(
+                body["billing"]["remaining"], billing.FREE_TIER_LIMIT - expected_call
+            )
+
+        status, body, _ = request(
+            self.api, "/convert", "POST", {"markdown": "over free tier"},
+            headers=auth(key),
+        )
+        self.assertEqual(status, 402)
+        self.assertEqual(body["status"], 402)
+        self.assertEqual(body["error"], "Payment Required")
+        self.assertEqual(body["calls_made"], billing.FREE_TIER_LIMIT + 1)
+        self.assertEqual(body["free_tier_limit"], billing.FREE_TIER_LIMIT)
+        self.assertTrue(body["wallet_address"])
+
+    def test_concurrent_calls_do_not_oversell_free_tier(self):
+        key = self.key()
+
+        def call(index):
+            return request(
+                self.api, "/convert", "POST", {"markdown": f"parallel {index}"},
+                headers=auth(key),
+            )
+
+        with ThreadPoolExecutor(max_workers=20) as pool:
+            responses = list(pool.map(call, range(20)))
+
+        statuses = [status for status, _, _ in responses]
+        self.assertEqual(statuses.count(200), billing.FREE_TIER_LIMIT)
+        self.assertEqual(statuses.count(402), 20 - billing.FREE_TIER_LIMIT)
+        self.assertEqual(
+            billing.check_usage(key)["call_count"],
+            20,
+        )
+
+    def test_minify_empty_input_is_billed_once(self):
+        key = self.key()
+        status, body, _ = request(
+            self.api, "/minify", "POST", {"code": ""}, headers=auth(key)
+        )
+
+        self.assertEqual(status, 200)
+        self.assertEqual(body["warning"], "Empty input — nothing to minify.")
+        self.assertEqual(body["billing"]["status"], 200)
+        self.assertEqual(body["billing"]["calls_made"], 1)
+
+    def test_batch_returns_partial_results_when_billing_expires_mid_request(self):
+        key = self.key()
+        for index in range(billing.FREE_TIER_LIMIT - 1):
+            status, _, _ = request(
+                self.api, "/convert", "POST", {"markdown": str(index)},
+                headers=auth(key),
+            )
+            self.assertEqual(status, 200)
+
+        status, body, _ = request(
+            self.api, "/batch", "POST",
+            {"items": ["# allowed", "blocked", "also blocked"]},
+            headers=auth(key),
+        )
+        self.assertEqual(status, 402)
+        self.assertEqual(body["error"], "Payment Required")
+        self.assertEqual(body["partial_results"], ["<h1>allowed</h1>"])
+        self.assertEqual(body["billing"]["status"], 402)
+        self.assertEqual(body["billing"]["calls_made"], billing.FREE_TIER_LIMIT + 1)
+        self.assertTrue(body["wallet_address"])
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    unittest.main(verbosity=2)

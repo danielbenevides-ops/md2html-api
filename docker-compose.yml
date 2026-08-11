@@ -6,12 +6,20 @@ services:
     container_name: md2html
     ports:
       - "8777:8777"
-    restart: always
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PORT: "8777"
+    # Persists /app/data/api_keys.json and /app/data/usage.json.
+    volumes:
+      - md2html-data:/app/data
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8777/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8777/health', timeout=3)"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-    environment:
-      - PYTHONUNBUFFERED=1
+
+volumes:
+  md2html-data:
+    name: md2html-data

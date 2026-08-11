@@ -20,12 +20,165 @@ If MD2HTML API is useful, [star the repository](https://github.com/dcn13l/md2htm
 
 ## Why MD2HTML?
 
+
 - **Simple:** send JSON or plain text and receive JSON back.
 - **Useful:** Markdown conversion plus sanitization, batching, code minification, HTML extraction, URL shortening, cron parsing, regex testing, JSON formatting, text statistics, and slug generation.
 - **Safe by default:** HTML escaping, URL-scheme filtering, request-size limits, CORS, and security headers.
 - **Low-friction:** 10 free calls per client, with no signup required for the free tier.
 - **Predictable:** pay only when you need more calls, at `$0.001` per call in Litecoin (LTC).
 - **Portable:** the server uses only Python's standard library and runs anywhere Python 3.8+ runs.
+
+## Quick Start
+
+No signup, no API key — 10 free calls per IP:
+
+```bash
+# 1. Health check
+curl http://147.15.103.217/md2html/health
+# 2. Convert Markdown to HTML
+curl -X POST http://147.15.103.217/md2html/convert \
+  -H "Content-Type: application/json" \
+  -d '{"markdown": "# Hello **world**\n\n- item 1\n- item 2"}'
+# 3. Mint your own API key (separate free-tier bucket)
+curl http://147.15.103.217/md2html/register
+```
+
+Want to self-host? Jump to [Self-Host](#self-host).
+
+---
+
+## API Reference
+
+**Base URL:** `http://147.15.103.217/md2html` · **Port:** `8777` · **Rate limit:** 30 req/min/IP · **Max body:** 1MB
+
+Only `POST` endpoints (`/convert`, `/json/prettify`, `/text/stats`, `/slug`) are billed. All `GET` endpoints are free. Add `-H "X-API-Key: <key>"` to bill against your key rather than your IP.
+
+| # | Method | Endpoint | Billed | Description |
+|---|--------|----------|:------:|-------------|
+| 1 | `GET`  | `/health` | — | Readiness probe: status, version, uptime, endpoint manifest |
+| 2 | `GET`  | `/register` | — | Mint a new API key (own free-tier bucket) |
+| 3 | `POST` | `/convert` | ✓ | Convert Markdown to styled HTML (max 50KB markdown) |
+| 4 | `POST` | `/json/prettify` | ✓ | Pretty-print a compact JSON document |
+| 5 | `POST` | `/text/stats` | ✓ | Word count, char count, reading time, top words |
+| 6 | `POST` | `/slug` | ✓ | Generate a URL-safe slug from a title |
+| 7 | `GET`  | `/docs` | — | Plain-text usage guide for the entire API |
+| 8 | `GET`  | `/pricing` | — | Public plan and rate-limit information |
+| 9 | `GET`  | `/payment` | — | LTC wallet address for pay-per-call billing |
+| 10 | `GET` | `/usage` | — | Current usage and remaining free-tier calls |
+
+### 1. `GET /health`
+
+```bash
+curl http://147.15.103.217/md2html/health
+```
+```json
+{"status":"ok","version":"1.4.0","uptime_seconds":3612.5,"uptime":"0d 1h 0m 12s","port":8777,
+ "endpoints":["/health","/register","/convert","/json/prettify","/text/stats","/slug","/docs","/pricing","/payment","/usage","/stats"]}
+```
+
+### 2. `GET /register`
+
+```bash
+curl http://147.15.103.217/md2html/register
+```
+```json
+{"api_key":"mk_abc123def456","wallet_address":"Las7JLihEnYvACUt4jgxqcFZrD3RgVM",
+ "free_tier_limit":10,"calls_made":0,"remaining":10}
+```
+
+### 3. `POST /convert`
+
+Supports headings, bold, italic, links, inline code, fenced code blocks, unordered lists. Body: `application/json` (`{"markdown": "..."}`) or `text/plain` (raw markdown). Max markdown input: 50KB.
+
+```bash
+curl -X POST http://147.15.103.217/md2html/convert \
+  -H "Content-Type: application/json" \
+  -d '{"markdown": "# Hello **world**\n\nVisit [example](https://example.com)."}'
+```
+```json
+{"html":"<h1>Hello <strong>world</strong></h1>\n<p>Visit <a href=\"https://example.com\">example</a>.</p>",
+ "billing":{"status":"ok","call_count":1,"remaining":9}}
+```
+
+### 4. `POST /json/prettify`
+
+Input JSON string goes in the `"json"` field (not the request body itself).
+
+```bash
+curl -X POST http://147.15.103.217/md2html/json/prettify \
+  -H "Content-Type: application/json" \
+  -d '{"json": "{\"b\":2,\"a\":1}"}'
+```
+```json
+{"prettified":"{\n  \"a\": 1,\n  \"b\": 2\n}","billing":{"status":"ok","call_count":3,"remaining":7}}
+```
+
+### 5. `POST /text/stats`
+
+```bash
+curl -X POST http://147.15.103.217/md2html/text/stats \
+  -H "Content-Type: application/json" \
+  -d '{"text": "The quick brown fox jumps over the lazy dog."}'
+```
+```json
+{"words":9,"chars":44,"chars_no_spaces":35,"reading_time_min":0.05,
+ "top_words":[["the",2],["quick",1]],"billing":{"status":"ok","call_count":4,"remaining":6}}
+```
+
+### 6. `POST /slug`
+
+Input goes in the `"title"` field. Handles non-ASCII and special characters.
+
+```bash
+curl -X POST http://147.15.103.217/md2html/slug \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Café — Menus & Drinks!"}'
+```
+```json
+{"slug":"cafe-menus-drinks","billing":{"status":"ok","call_count":5,"remaining":5}}
+```
+
+### 7. `GET /docs`
+
+```bash
+curl http://147.15.103.217/md2html/docs
+```
+
+### 8. `GET /pricing`
+
+No auth, not billed.
+
+```bash
+curl http://147.15.103.217/md2html/pricing
+```
+```json
+{"free_tier":{"calls":10,"price_per_call":"0.00 USD","auth":"none — identified by IP or X-API-Key"},
+ "paid_tier":{"price_per_call":"0.001 USD","currency":"LTC","wallet_address":"Las7JLihEnYvACUt4jgxqcFZrD3RgVM"},
+ "rate_limit":{"max":30,"window_seconds":60},"max_body_bytes":1048576}
+```
+
+### 9. `GET /payment`
+
+```bash
+curl http://147.15.103.217/md2html/payment
+```
+```json
+{"wallet_address":"Las7JLihEnYvACUt4jgxqcFZrD3RgVM","currency":"LTC",
+ "message":"Send any amount of Litecoin to this address to continue using the API after the free tier."}
+```
+
+### 10. `GET /usage`
+
+Query by IP (no header) or by API key (`-H "X-API-Key: ..."`).
+
+```bash
+curl http://147.15.103.217/md2html/usage
+```
+```json
+{"client":"203.0.113.42","calls_made":7,"free_tier_limit":10,"remaining":3}
+```
+
+---
 
 ## Pricing
 
@@ -195,7 +348,35 @@ python server.py
 
 The local API is available at `http://localhost:8777/`. For production, put it behind a reverse proxy and keep the Litecoin wallet configuration outside source control where appropriate. See [`deploy.sh`](deploy.sh) and [`INTEGRATION.md`](INTEGRATION.md) for deployment and client examples.
 
+
 ## Development
+
+### Behind an nginx reverse proxy
+
+Mount under `/md2html/` (same path the live API uses):
+
+```nginx
+location /md2html/ {
+    proxy_pass http://127.0.0.1:8777/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+```
+
+### Configuration
+
+Configured via constants at the top of [`server.py`](server.py):
+
+| Constant | Default | Description |
+|---|---|---|
+| `PORT` / `VERSION` | `8777` / `1.4.0` | Listening port / API version (returned by `/health`) |
+| `MAX_BODY` | `1MB` | Max request body size |
+| `RATE_LIMIT_WINDOW` / `RATE_LIMIT_MAX` | `60` / `30` | Rate-limit window (s) / max requests per window per IP |
+| `FREE_TIER_LIMIT` | `10` | Free calls per client (in `billing.py`) |
+| `WALLET_ADDRESS` | from `wallet.json` | LTC address for payments |
+
+### Development
 
 ```bash
 python test_server.py
