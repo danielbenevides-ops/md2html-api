@@ -18,4 +18,4 @@ jobs:
       - name: Run tests
         env:
           MD2HTML_BASE_URL: ${{ vars.MD2HTML_BASE_URL || 'http://147.15.103.217/md2html/' }}
-        run: python -m pytest test_suite.py -v
+        run: python -m unittest test_suite -v

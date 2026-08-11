@@ -1,7 +1,7 @@
 name: Deploy
 on:
-  push:
-    branches: [master]
+  # Manual only until VPS_HOST/VPS_USER/VPS_SSH_KEY are configured as secrets.
+  workflow_dispatch:
 jobs:
   deploy:
     runs-on: ubuntu-latest
