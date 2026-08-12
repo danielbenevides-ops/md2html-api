@@ -118,6 +118,18 @@ class MD2HTMLAPITest(unittest.TestCase):
         self.assertEqual(headers["Access-Control-Allow-Origin"], "*")
         self.assertEqual(headers["X-Content-Type-Options"], "nosniff")
 
+    def test_openapi_covers_all_advertised_health_endpoints(self):
+        health_status, health, _ = request(self.api, "/health")
+        spec_status, spec, _ = request(self.api, "/swagger.json")
+
+        self.assertEqual(health_status, 200)
+        self.assertEqual(spec_status, 200)
+        self.assertEqual(spec["openapi"], "3.0.3")
+        self.assertEqual(spec["info"]["version"], health["version"])
+        self.assertEqual(set(health["endpoints"]), set(spec["paths"]) - {"/swagger.json"})
+        self.assertIn("post", spec["paths"]["/webhook/register"])
+        self.assertIn("post", spec["paths"]["/webhook/test"])
+
     def test_convert_basic_markdown_to_html(self):
         key = self.key()
         markdown = "# Hello\n\n**bold** and *italic*\n\n- one\n- two"

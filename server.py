@@ -1544,6 +1544,52 @@ SWAGGER_SPEC = {
                 },
             }
         },
+        "/webhook/register": {
+            "post": {
+                "summary": "Register a callback for completed batch conversions",
+                "security": [{"ApiKeyAuth": []}, {}],
+                "requestBody": {
+                    "required": True,
+                    "content": {"application/json": {"schema": {
+                        "type": "object",
+                        "required": ["callback_url"],
+                        "properties": {
+                            "callback_url": {"type": "string", "format": "uri", "example": "https://example.com/md2html-hook"},
+                            "url": {"type": "string", "format": "uri", "deprecated": True},
+                        },
+                    }}},
+                },
+                "responses": {
+                    "200": {"description": "Webhook registered"},
+                    "400": {"description": "Missing, invalid, or private callback URL"},
+                    "413": {"description": "Request body too large"},
+                    "429": {"description": "Rate limit exceeded"},
+                },
+            }
+        },
+        "/webhook/test": {
+            "post": {
+                "summary": "Send a test event to a registered or supplied callback",
+                "security": [{"ApiKeyAuth": []}, {}],
+                "requestBody": {
+                    "required": False,
+                    "content": {"application/json": {"schema": {
+                        "type": "object",
+                        "properties": {
+                            "callback_url": {"type": "string", "format": "uri"},
+                            "url": {"type": "string", "format": "uri", "deprecated": True},
+                        },
+                    }}},
+                },
+                "responses": {
+                    "200": {"description": "Callback accepted the test event"},
+                    "400": {"description": "Invalid or private callback URL"},
+                    "404": {"description": "No callback registered"},
+                    "429": {"description": "Rate limit exceeded"},
+                    "502": {"description": "Callback delivery failed"},
+                },
+            }
+        },
         "/docs": {
             "get": {
                 "summary": "Plain-text usage guide",

@@ -1,84 +1,60 @@
 ---
-title: "Build a Micro-Payment API on a Free VPS"
+title: "Building a Metered Markdown API with Python's Standard Library"
 published: false
-description: "Turn markdown into HTML — and pay per call in Litecoin. A 500-word tutorial."
-tags: tutorial, api, cryptocurrency, sideproject
-canonical_url: ""
-series: "Autonomous Business Agent"
-cover_image: ""
+description: "A factual look at MD2HTML: stdlib HTTP, JSON-backed usage, a free trial, and HTTP 402 payment instructions."
+tags: python, api, sideproject, webdev
 ---
 
-# Build a Micro-Payment API on a Free VPS
+# Building a Metered Markdown API with Python's Standard Library
 
-Most API monetization guides assume Stripe, a business entity, and a lot of overhead. What if you just want to charge fractions of a cent per call — no incorporation, no fiat, no KYC? This is the story of **MD2HTML**, a markdown-to-HTML API that lives on a single free VPS and bills via Litecoin micropayments.
+MD2HTML is a small deployed API for Markdown conversion and related text/HTML utilities. It intentionally avoids a framework: the HTTP layer is Python's `http.server`, state is stored in JSON files, and nginx plus systemd handle the public deployment.
 
-## The Stack
+## The real stack
 
-Everything runs on one box:
+- Python standard library HTTP server
+- A small built-in Markdown converter
+- JSON/file-backed API-key usage and analytics
+- nginx reverse proxy
+- systemd service
+- Oracle Cloud Always Free ARM VPS
 
-- **FastAPI** for the HTTP layer
-- A regex-based **markdown converter** (no heavy deps)
-- **Redis** to track API keys and usage counters
-- **Litecoin Core** RPC (`litecoind -daemon`) as the payment processor — it holds key→address mappings and watches for incoming deposits
+There is no FastAPI, Redis, unique wallet per user, or embedded Litecoin Core node.
 
-No database, no auth service, no payment gateway subscription. The total memory footprint stays under 512 MB, which fits comfortably on any free-tier VPS.
+## Try the free flow
 
-## How Billing Works
-
-Each user registers and gets an API key mapped to a unique LTC deposit address. The first **10 calls are free** — enough to test the converter end-to-end. After that, each call costs **$0.001, billed in LTC** at the current spot price. Underpaying returns `402 Payment Required`; the balance is topped up the moment `litecoind` confirms a new deposit to the mapped address.
-
-## Calling the API
-
-Here's the full client flow — register, convert, and check usage:
+You can call the API by source IP, or mint an API key without supplying personal information:
 
 ```bash
-# 1. Register: get your API key and LTC deposit address
-curl -X POST http://147.15.103.217/md2html/register \
-  -H "Content-Type: application/json" \
-  -d '{"email": "you@example.com"}'
-# → {"api_key":"a1b2c3...","ltc_address":"ltc1q..."}
+# Optional: mint an independent key
+curl http://147.15.103.217/md2html/register
 
-# 2. Convert markdown to HTML (free for first 10 calls)
+# Convert Markdown; replace mk_... if you chose to register
 curl -X POST http://147.15.103.217/md2html/convert \
-  -H "Authorization: Bearer a1b2c3..." \
   -H "Content-Type: application/json" \
-  -d '{"markdown": "# Hello\n\nThis is **bold** text."}'
-# → {"html":"<h1>Hello</h1>\n<p>This is <strong>bold</strong> text.</p>"}
-
-# 3. Check remaining balance and usage
-curl http://147.15.103.217/md2html/usage \
-  -H "Authorization: Bearer a1b2c3..."
-# → {"free_remaining":8,"calls_today":2,"ltc_balance":0.0}
+  -H "X-API-Key: mk_..." \
+  -d '{"markdown":"# Hello\n\nThis is **bold**."}'
 ```
 
-Or in Python:
+The free trial is 10 billable calls per IP or API key. After exhaustion, billable POST requests return `402 Payment Required` with LTC payment instructions. The current deployment uses a shared payment address; automatic per-user settlement should not be assumed.
 
-```python
-import requests
+## Discover the contract
 
-BASE = "http://147.15.103.217/md2html"
+The service reports version 1.4.0 and 26 product endpoints. Its OpenAPI document is available at:
 
-# Register
-reg = requests.post(f"{BASE}/register", json={"email": "you@example.com"}).json()
-api_key = reg["api_key"]
-
-# Convert
-r = requests.post(
-    f"{BASE}/convert",
-    headers={"Authorization": f"Bearer {api_key}"},
-    json={"markdown": "# Title\n\nSome **bold** content."},
-)
-print(r.json()["html"])
+```text
+http://147.15.103.217/md2html/swagger.json
 ```
 
-## Three Lessons Learned
+Endpoints include conversion, sanitization, batch conversion, Markdown linting, HTML minification, table parsing, JSON formatting, text statistics, slug generation, and webhooks.
 
-1. **10 free calls beat a free tier with limits.** It's enough to prove value; anything beyond feels like a purchase, not a trial.
-2. **Coin RPC over Stripe for micro-transactions.** No processor takes a 30¢ cut that dwarfs a $0.001 charge.
-3. **Cache the LTC price.** Polling an exchange once a minute is plenty and keeps latency under 50 ms per call.
+## Operational limits
 
-## Wrap Up
+The deployment enforces 30 requests per minute per source IP and a 1 MiB request-body cap. Its public URL is currently HTTP-only, so it is for evaluation and non-sensitive content—not secrets or private documents.
 
-The whole service — API, billing, and wallet — lives on a single free VPS. If you're selling a tiny utility, you don't need enterprise billing: a daemon, a key registry, and honest pricing. Ship it, deposit some LTC, let the fractions add up.
+## What I learned
 
-The API is live at `http://147.15.103.217/md2html/`. Try it — the first few calls are on the house.
+1. A framework is optional for a focused API, but explicit tests and a machine-readable contract are not.
+2. Payment copy must describe what is actually automated; vague “wallet balance” claims create a trust failure.
+3. A successful copy-paste example matters more than a long feature list.
+
+The API is live at http://147.15.103.217/md2html/. Feedback on the contract and onboarding flow is welcome.
