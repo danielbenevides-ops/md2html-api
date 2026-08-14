@@ -1,0 +1,1099 @@
+openapi: 3.0.3
+info:
+  title: MD2HTML API
+  version: 1.4.0
+  description: >-
+    Markdown conversion and developer utility API. Billable POST requests have
+    a free allowance of 10 calls per client (X-API-Key or source IP), then
+    return HTTP 402 with Litecoin payment information.
+  contact:
+    url: https://github.com/danielbenevides-ops/md2html-api
+servers:
+  - url: http://147.15.103.217/md2html
+    description: Production VPS
+  - url: http://localhost:8777
+    description: Local development
+
+tags:
+  - name: Service
+  - name: Keys
+  - name: Conversion
+  - name: Utilities
+  - name: Billing
+  - name: Analytics
+
+paths:
+  /:
+    get:
+      tags: [Service]
+      summary: Landing page
+      responses:
+        '200':
+          description: HTML landing page
+          content:
+            text/html:
+              schema: { type: string }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /index.html:
+    get:
+      tags: [Service]
+      summary: Landing page
+      responses:
+        '200':
+          description: HTML landing page
+          content:
+            text/html:
+              schema: { type: string }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /health:
+    get:
+      tags: [Service]
+      summary: Health check
+      responses:
+        '200':
+          description: Server status and advertised endpoints
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /uptime:
+    get:
+      tags: [Service]
+      summary: Uptime and aggregate call counters
+      responses:
+        '200':
+          description: Uptime summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Uptime' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /register:
+    get:
+      tags: [Keys]
+      summary: Mint an API key
+      responses:
+        '200':
+          description: New API key and initial allowance
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisterResponse' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    post:
+      tags: [Keys]
+      summary: Mint an API key with registration metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '200':
+          description: New API key and registration metadata
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisterResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /keys/info:
+    get:
+      tags: [Keys]
+      summary: Show authenticated key usage
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Key plan and free-tier usage
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KeyInfo' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /keys/revoke:
+    post:
+      tags: [Keys]
+      summary: Revoke the authenticated API key
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Key revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RevokeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /keys/rotate:
+    post:
+      tags: [Keys]
+      summary: Replace the authenticated API key
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Replacement key; previous key is revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RotateResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /convert:
+    post:
+      tags: [Conversion]
+      summary: Convert Markdown to HTML
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema: { type: string, description: Raw Markdown text }
+          application/json:
+            schema: { $ref: '#/components/schemas/MarkdownRequest' }
+      responses:
+        '200':
+          description: Converted HTML
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConvertResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /markdown/lint:
+    post:
+      tags: [Conversion]
+      summary: Lint Markdown syntax
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema: { type: string }
+          application/json:
+            schema: { $ref: '#/components/schemas/MarkdownRequest' }
+      responses:
+        '200':
+          description: Markdown lint result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MarkdownLintResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /html/minify:
+    post:
+      tags: [Utilities]
+      summary: Minify HTML source
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema: { type: string }
+          application/json:
+            schema: { $ref: '#/components/schemas/HtmlRequest' }
+      responses:
+        '200':
+          description: Minified HTML
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HtmlMinifyResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /table/parse:
+    post:
+      tags: [Utilities]
+      summary: Parse a Markdown pipe table
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema: { type: string }
+          application/json:
+            schema: { $ref: '#/components/schemas/TableRequest' }
+      responses:
+        '200':
+          description: Parsed table
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TableParseResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /sanitize:
+    post:
+      tags: [Conversion]
+      summary: Escape raw HTML in Markdown and convert it
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema: { type: string }
+          application/json:
+            schema: { $ref: '#/components/schemas/MarkdownRequest' }
+      responses:
+        '200':
+          description: Sanitized HTML
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SanitizeResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /batch:
+    post:
+      tags: [Conversion]
+      summary: Convert up to 50 Markdown strings
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BatchRequest' }
+      responses:
+        '200':
+          description: Batch conversion results; one billable call per item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BatchResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402':
+          description: Free tier exhausted during the batch
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BatchPaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /webhook/register:
+    post:
+      tags: [Utilities]
+      summary: Register a batch-completion callback
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookRegistrationRequest' }
+      responses:
+        '200':
+          description: Webhook registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookRegistrationResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /webhook/test:
+    post:
+      tags: [Utilities]
+      summary: Send a test webhook event
+      description: >-
+        Sends to the registered callback. An optional callback_url (or legacy
+        url) tests a destination without replacing the registration.
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookTestRequest' }
+      responses:
+        '200':
+          description: Callback delivery result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookTestResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '502':
+          description: Callback could not be delivered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookTestResponse' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /minify:
+    post:
+      tags: [Utilities]
+      summary: Minify HTML, CSS, or JavaScript
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MinifyRequest' }
+      responses:
+        '200':
+          description: Minified source
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MinifyResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /html/extract:
+    post:
+      tags: [Utilities]
+      summary: Extract visible text from HTML
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/HtmlRequest' }
+      responses:
+        '200':
+          description: Extracted visible text
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HtmlExtractResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /url/shorten:
+    post:
+      tags: [Utilities]
+      summary: Generate an idempotent base62 short code
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UrlRequest' }
+      responses:
+        '200':
+          description: Short URL metadata
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UrlShortenResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /cron/parse:
+    post:
+      tags: [Utilities]
+      summary: Parse a five-field cron expression
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CronRequest' }
+      responses:
+        '200':
+          description: Human-readable cron description and fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CronParseResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /regex/test:
+    post:
+      tags: [Utilities]
+      summary: Test a regular expression and return matches
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegexRequest' }
+      responses:
+        '200':
+          description: Regex match results, limited to 1,000 matches
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegexTestResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /json/prettify:
+    post:
+      tags: [Utilities]
+      summary: Pretty-print JSON text
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/JsonRequest' }
+      responses:
+        '200':
+          description: Parsed pretty-printed JSON object with billing metadata
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JsonPrettifyResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /text/stats:
+    post:
+      tags: [Utilities]
+      summary: Compute text statistics
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TextRequest' }
+      responses:
+        '200':
+          description: Text counts and reading-time estimate
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TextStats' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /slug:
+    post:
+      tags: [Utilities]
+      summary: Generate a URL-safe slug
+      security:
+        - ApiKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SlugRequest' }
+      responses:
+        '200':
+          description: Generated slug
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SlugResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PaymentRequired' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /docs:
+    get:
+      tags: [Service]
+      summary: Plain-text usage guide
+      responses:
+        '200':
+          description: Built-in usage guide
+          content:
+            text/plain:
+              schema: { type: string }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /pricing:
+    get:
+      tags: [Billing]
+      summary: Pricing, limits, and rate-limit configuration
+      responses:
+        '200':
+          description: Current public plan information
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pricing' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /payment:
+    get:
+      tags: [Billing]
+      summary: Litecoin payment information
+      responses:
+        '200':
+          description: Payment wallet and instructions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentInfo' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /usage:
+    get:
+      tags: [Billing]
+      summary: Check current client usage
+      security:
+        - ApiKeyAuth: []
+        - {}
+      responses:
+        '200':
+          description: Usage for the API key or source IP
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /stats:
+    get:
+      tags: [Analytics]
+      summary: Global analytics statistics
+      responses:
+        '200':
+          description: Aggregate server analytics
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Stats' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /swagger.json:
+    get:
+      tags: [Service]
+      summary: Server-provided OpenAPI document
+      responses:
+        '200':
+          description: OpenAPI JSON document
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Optional bearer key issued by GET or POST /register. Without it, billing uses the source IP.
+  responses:
+    BadRequest:
+      description: Invalid request body or endpoint input
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing, invalid, or revoked API key
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    PaymentRequired:
+      description: Free-tier allowance exhausted
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/PaymentRequired' }
+    PayloadTooLarge:
+      description: Request body, Markdown, or batch exceeds its limit
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: More than 30 requests in the 60-second source-IP window
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RateLimited' }
+    NotFound:
+      description: Resource or registered webhook not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        message: { type: string }
+        max_bytes: { type: integer }
+        max_items: { type: integer }
+        retry_after: { type: integer }
+      additionalProperties: true
+    Billing:
+      type: object
+      properties:
+        status: { type: integer, example: 200 }
+        calls_made: { type: integer }
+        remaining: { type: integer }
+        free_tier_limit: { type: integer, example: 10 }
+    PaymentRequired:
+      type: object
+      properties:
+        status: { type: integer, enum: [402] }
+        error: { type: string, example: Payment Required }
+        message: { type: string }
+        wallet_address: { type: string }
+        calls_made: { type: integer }
+        free_tier_limit: { type: integer }
+        partial_results:
+          type: array
+          items: { type: string }
+        billing: { $ref: '#/components/schemas/Billing' }
+      additionalProperties: true
+    BatchPaymentRequired:
+      allOf:
+        - $ref: '#/components/schemas/PaymentRequired'
+        - type: object
+          required: [partial_results]
+    RateLimited:
+      type: object
+      properties:
+        error: { type: string, example: Rate limit exceeded }
+        retry_after: { type: integer, example: 60 }
+    RegisterRequest:
+      type: object
+      required: [email, plan]
+      properties:
+        email: { type: string, description: Non-empty registration label; format is not validated by the server }
+        plan: { type: string, description: Non-empty plan label }
+    RegisterResponse:
+      type: object
+      required: [api_key, wallet_address, free_tier_limit, calls_made, remaining]
+      properties:
+        api_key: { type: string, pattern: '^mk_' }
+        wallet_address: { type: string }
+        free_tier_limit: { type: integer, example: 10 }
+        calls_made: { type: integer, example: 0 }
+        remaining: { type: integer, example: 10 }
+        email: { type: string }
+        plan: { type: string }
+    KeyInfo:
+      type: object
+      required: [api_key, status, plan, usage, calls_made, free_tier_limit, remaining_free_calls, remaining]
+      properties:
+        api_key: { type: string }
+        status: { type: string, enum: [active] }
+        plan: { type: string }
+        usage:
+          type: object
+          properties:
+            calls_made: { type: integer }
+            free_tier_limit: { type: integer }
+        calls_made: { type: integer }
+        free_tier_limit: { type: integer }
+        remaining_free_calls: { type: integer }
+        remaining: { type: integer }
+    RevokeResponse:
+      type: object
+      required: [api_key, revoked, message]
+      properties:
+        api_key: { type: string }
+        revoked: { type: boolean, example: true }
+        message: { type: string }
+    RotateResponse:
+      allOf:
+        - $ref: '#/components/schemas/KeyInfo'
+        - type: object
+          required: [previous_key, rotated, message]
+          properties:
+            previous_key: { type: string }
+            rotated: { type: boolean, example: true }
+            message: { type: string }
+    MarkdownRequest:
+      type: object
+      required: [markdown]
+      properties:
+        markdown: { type: string }
+    HtmlRequest:
+      type: object
+      required: [html]
+      properties:
+        html: { type: string }
+    TableRequest:
+      type: object
+      anyOf:
+        - required: [markdown]
+        - required: [table]
+      properties:
+        markdown: { type: string }
+        table: { type: string }
+    ConvertResponse:
+      type: object
+      required: [html, billing]
+      properties:
+        html: { type: string }
+        warning: { type: string }
+        billing: { $ref: '#/components/schemas/Billing' }
+    MarkdownLintResponse:
+      type: object
+      required: [valid, warnings, line_count, billing]
+      properties:
+        valid: { type: boolean }
+        warnings:
+          type: array
+          items: { $ref: '#/components/schemas/LintWarning' }
+        line_count: { type: integer }
+        billing: { $ref: '#/components/schemas/Billing' }
+    LintWarning:
+      type: object
+      required: [line, code, message, severity]
+      properties:
+        line: { type: integer }
+        code: { type: string }
+        message: { type: string }
+        severity: { type: string, enum: [warning, error] }
+    HtmlMinifyResponse:
+      type: object
+      required: [html, minified, original_chars, minified_chars, reduction_pct, billing]
+      properties:
+        html: { type: string }
+        minified: { type: string }
+        original_chars: { type: integer }
+        minified_chars: { type: integer }
+        reduction_pct: { type: number }
+        billing: { $ref: '#/components/schemas/Billing' }
+    TableParseResponse:
+      type: object
+      required: [headers, rows, alignments, row_count, column_count, billing]
+      properties:
+        headers:
+          type: array
+          items: { type: string }
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: { type: string }
+        alignments:
+          type: array
+          items: { type: string, nullable: true, enum: [left, center, right] }
+        row_count: { type: integer }
+        column_count: { type: integer }
+        billing: { $ref: '#/components/schemas/Billing' }
+    SanitizeResponse:
+      type: object
+      required: [html, sanitized, billing]
+      properties:
+        html: { type: string }
+        sanitized: { type: boolean, example: true }
+        warning: { type: string }
+        billing: { $ref: '#/components/schemas/Billing' }
+    BatchRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: { type: string }
+    BatchResponse:
+      type: object
+      required: [results, count, billing]
+      properties:
+        results:
+          type: array
+          items: { type: string }
+        count: { type: integer }
+        billing: { $ref: '#/components/schemas/Billing' }
+    WebhookRegistrationRequest:
+      type: object
+      anyOf:
+        - required: [callback_url]
+        - required: [url]
+      properties:
+        callback_url: { type: string, format: uri, description: Public http(s) callback URL }
+        url: { type: string, format: uri, description: Legacy alias for callback_url }
+    WebhookRegistrationResponse:
+      type: object
+      required: [registered, callback_url, url, message]
+      properties:
+        registered: { type: boolean, example: true }
+        callback_url: { type: string, format: uri }
+        url: { type: string, format: uri }
+        message: { type: string }
+    WebhookTestRequest:
+      type: object
+      properties:
+        callback_url: { type: string, format: uri }
+        url: { type: string, format: uri, description: Legacy alias for callback_url }
+    WebhookTestResponse:
+      type: object
+      properties:
+        event: { type: string, example: webhook.test }
+        status: { type: string, example: test }
+        timestamp: { type: integer }
+        delivered: { type: boolean }
+        status_code: { type: integer }
+        callback_url: { type: string, format: uri }
+        error: { type: string }
+    MinifyRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string }
+        type: { type: string, enum: [html, css, js], default: html }
+    MinifyResponse:
+      type: object
+      required: [minified, original_chars, minified_chars, reduction_pct, type, billing]
+      properties:
+        minified: { type: string }
+        original_chars: { type: integer }
+        minified_chars: { type: integer }
+        reduction_pct: { type: number }
+        type: { type: string, enum: [html, css, js] }
+        warning: { type: string }
+        billing: { $ref: '#/components/schemas/Billing' }
+    HtmlExtractResponse:
+      type: object
+      required: [text, chars, billing]
+      properties:
+        text: { type: string }
+        chars: { type: integer }
+        billing: { $ref: '#/components/schemas/Billing' }
+    UrlRequest:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string, description: 'Must start with http://, https://, or ftp://' }
+    UrlShortenResponse:
+      type: object
+      required: [short_code, short_url, original_url, billing]
+      properties:
+        short_code: { type: string }
+        short_url: { type: string }
+        original_url: { type: string }
+        billing: { $ref: '#/components/schemas/Billing' }
+    CronRequest:
+      type: object
+      required: [expression]
+      properties:
+        expression: { type: string, description: Five-field cron expression }
+    CronParseResponse:
+      type: object
+      required: [expression, description, fields, billing]
+      properties:
+        expression: { type: string }
+        description: { type: string }
+        fields:
+          type: object
+          required: [minute, hour, day_of_month, month, day_of_week]
+          properties:
+            minute: { type: string }
+            hour: { type: string }
+            day_of_month: { type: string }
+            month: { type: string }
+            day_of_week: { type: string }
+        billing: { $ref: '#/components/schemas/Billing' }
+    RegexRequest:
+      type: object
+      required: [pattern, input]
+      properties:
+        pattern: { type: string }
+        input: { type: string }
+        flags: { type: string, description: 'Supported flags are i, m, s, and x' }
+    RegexTestResponse:
+      type: object
+      required: [pattern, flags, input, matched, match_count, truncated, matches, billing]
+      properties:
+        pattern: { type: string }
+        flags: { type: string }
+        input: { type: string }
+        matched: { type: boolean }
+        match_count: { type: integer }
+        truncated: { type: boolean }
+        matches:
+          type: array
+          items: { $ref: '#/components/schemas/RegexMatch' }
+        billing: { $ref: '#/components/schemas/Billing' }
+    RegexMatch:
+      type: object
+      required: [match, index, end, groups, named_groups]
+      properties:
+        match: { type: string }
+        index: { type: integer }
+        end: { type: integer }
+        groups:
+          type: array
+          items: { type: string, nullable: true }
+        named_groups:
+          type: object
+          nullable: true
+          additionalProperties: { type: string, nullable: true }
+    JsonRequest:
+      type: object
+      required: [json]
+      properties:
+        json: { type: string, description: JSON document encoded as text }
+    JsonPrettifyResponse:
+      type: object
+      description: Pretty-printed JSON object with billing metadata attached.
+      properties:
+        billing: { $ref: '#/components/schemas/Billing' }
+      additionalProperties: true
+    TextRequest:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
+    TextStats:
+      type: object
+      required: [words, chars, chars_no_spaces, reading_time_min, top_words, billing]
+      properties:
+        words: { type: integer }
+        chars: { type: integer }
+        chars_no_spaces: { type: integer }
+        reading_time_min: { type: number }
+        top_words:
+          type: array
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items: { oneOf: [{ type: string }, { type: integer }] }
+        billing: { $ref: '#/components/schemas/Billing' }
+    SlugRequest:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+    SlugResponse:
+      type: object
+      required: [slug, billing]
+      properties:
+        slug: { type: string }
+        billing: { $ref: '#/components/schemas/Billing' }
+    Health:
+      type: object
+      required: [status, version, uptime_seconds, uptime, port, timestamp, endpoints]
+      properties:
+        status: { type: string, enum: [ok] }
+        version: { type: string }
+        uptime_seconds: { type: number }
+        uptime: { type: string }
+        port: { type: integer, example: 8777 }
+        timestamp: { type: integer }
+        endpoints:
+          type: array
+          items: { type: string }
+    Uptime:
+      type: object
+      required: [uptime_seconds, total_calls, unique_ips]
+      properties:
+        uptime_seconds: { type: number }
+        total_calls: { type: integer }
+        unique_ips: { type: integer }
+    Pricing:
+      type: object
+      required: [free_tier, paid_tier, rate_limit, max_body_bytes]
+      properties:
+        free_tier:
+          type: object
+          properties:
+            calls: { type: integer }
+            price_per_call: { type: string }
+            auth: { type: string }
+        paid_tier:
+          type: object
+          properties:
+            price_per_call: { type: string }
+            currency: { type: string, enum: [LTC] }
+            wallet_address: { type: string }
+            note: { type: string }
+        rate_limit:
+          type: object
+          properties:
+            max: { type: integer, example: 30 }
+            window_seconds: { type: integer, example: 60 }
+        max_body_bytes: { type: integer, example: 1048576 }
+    PaymentInfo:
+      type: object
+      required: [wallet_address, currency, message]
+      properties:
+        wallet_address: { type: string }
+        currency: { type: string, enum: [LTC] }
+        message: { type: string }
+    Usage:
+      type: object
+      required: [client, calls_made, free_tier_limit, remaining]
+      properties:
+        client: { type: string }
+        calls_made: { type: integer }
+        free_tier_limit: { type: integer }
+        remaining: { type: integer }
+    Stats:
+      type: object
+      required: [total_calls, unique_ips, calls_by_endpoint, calls_by_status, potential_conversions, avg_latency]
+      properties:
+        total_calls: { type: integer }
+        unique_ips: { type: integer }
+        calls_by_endpoint:
+          type: object
+          additionalProperties: { type: integer }
+        calls_by_status:
+          type: object
+          additionalProperties: { type: integer }
+        potential_conversions: { type: integer }
+        avg_latency: { type: number }

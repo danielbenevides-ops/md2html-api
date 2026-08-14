@@ -37,7 +37,7 @@ A dead-simple **markdown to html api**:
 - **Input:** JSON with a `markdown` field
 - **Output:** JSON with an `html` field — sanitized, ready to render
 - **No API key** for light use
-- **Open source:** [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api)
+- **Open source:** [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api)
 
 ### cURL
 
@@ -129,7 +129,7 @@ Same output. Same endpoint. The only difference is whether you're in the free ti
 1. **Most people need way less than they think.** 90% of Markdown-to-HTML use cases are: headers, bold, italic, lists, code blocks, links. A robust **markdown to html api** that handles those well beats an over-engineered parser that does everything poorly.
 2. **Sanitization is the real product.** Nobody asks for it until they get an XSS bug. Then it's the only thing they care about.
 3. **Crypto lets you be honest about cost.** When a request costs $0.0003 in compute, charging $0.001 is fair. A credit-card processor won't even let you *sell* something for $0.001. Crypto does. That's why micropayments work for us and subscriptions don't.
-4. **Open source is a feature, not a concession.** People trust the API because they can read the code. [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api). Fork it, audit it, self-host it. We'd rather have honest users than trapped ones.
+4. **Open source is a feature, not a concession.** People trust the API because they can read the code. [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api). Fork it, audit it, self-host it. We'd rather have honest users than trapped ones.
 
 ---
 
@@ -147,6 +147,6 @@ If you build something with it, tell us. If you find a bug, open an issue. If yo
 
 **Links**
 - API: `http://147.15.103.217/md2html/`
-- Source: [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api)
+- Source: [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api)
 
 Stop maintaining a Markdown parser. Start shipping features.

@@ -1,6 +1,6 @@
 # Reddit Posts — MD2HTML API
 
-> 3 posts, each under 250 words, authentic tone. Live URL: http://147.15.103.217/md2html/ · GitHub: https://github.com/dcn13l/md2html-api
+> 3 posts, each under 250 words, authentic tone. Live URL: http://147.15.103.217/md2html/ · GitHub: https://github.com/danielbenevides-ops/md2html-api
 
 ---
 
@@ -23,7 +23,7 @@ Stack is deliberately unsexy: Python stdlib `http.server`, no Flask/FastAPI, no 
 
 It's live right now: **http://147.15.103.217/md2html/** — there's a playground on the docs page so you can try it without committing.
 
-Source is open: **https://github.com/dcn13l/md2html-api**
+Source is open: **https://github.com/danielbenevides-ops/md2html-api**
 
 What I'd genuinely like feedback on: is the deposit-LTC-then-call flow acceptable for something this cheap, or is that a dealbreaker vs. a card on file? I suspect per-call sub-cent pricing only makes sense if the payment side is also frictionless, and I'm not sure LTC is there yet. Roast the API design too if you want — rate limiting and caching are still TODO.
 
@@ -47,7 +47,7 @@ Why it fits here:
 - 10 endpoints, few hundred lines, one SSH deploy.
 
 Live demo: **http://147.15.103.217/md2html/**
-Self-host it: **https://github.com/dcn13l/md2html-api**
+Self-host it: **https://github.com/danielbenevides-ops/md2html-api**
 
 Questions for the room:
 1. Does the LTC layer add value on a self-hosted tool, or is it overkill when you can just disable billing?
@@ -58,31 +58,29 @@ Questions for the room:
 
 ## Post 3 — r/SideProject
 
-**Title:** AI agent built and deployed a micro-SaaS with $0 budget - 30 days in
+**Title:** I used an AI agent to build and deploy an API on a $0 infrastructure budget
 
 **Body:**
 
-30 days ago I gave an autonomous AI agent a one-line brief: "build a profitable API product end-to-end, deploy it, monetize it." No team, budget, or roadmap from me. Here's where it landed.
+Over the last week I used an AI agent to help build, test, document, and deploy a small API. I set the constraints and approved account-level actions; the agent handled much of the implementation and verification.
 
-**The product:** MD2HTML — Markdown-to-HTML API. POST markdown, get clean HTML. Not glamorous, but every blog/CMS/docs site needs it, and small enough to ship solo.
+**The product:** MD2HTML — Markdown-to-HTML plus developer utility endpoints. POST data, get a deterministic JSON response. It is intentionally small and uses Python's standard library.
 
-**What the agent did, no human in the loop:**
-- Picked the idea (markdown conversion — high demand, simple scope)
-- Wrote the server in Python stdlib `http.server`, zero deps
-- Designed 10 endpoints, validation, error handling
-- Chose LiteWallet/Litecoin at $0.001/call — no Stripe, no KYC
-- Configured the reverse proxy, deployed to a VPS I already had
-- Wrote the docs page, blog posts, outreach copy
+**What is verified:**
+- Python stdlib server with 26 advertised endpoints
+- Unit tests, OpenAPI coverage checks, and live health checks
+- Reverse proxy deployment on an existing Oracle free-tier VPS
+- 10 free billable calls, then a published LTC payment address
+- Source, docs, SDKs, and distribution drafts
 
-Framework: Hermes Agent (Nous Research, open source) on a cron loop. ~6 invocations, under 4 hours wall-clock to live API.
-
-**30-day scoreboard:**
+**Current scoreboard:**
 - ✅ API live: http://147.15.103.217/md2html/
-- ✅ LTC payments validating on-chain
-- ✅ Open-sourced: https://github.com/dcn13l/md2html-api
-- ✅ Indexed by Google, first paying customers
-- Spend $0.00 · Human time ~2hrs (monitoring only)
+- ✅ Source public: https://github.com/danielbenevides-ops/md2html-api
+- ✅ Payment watcher tested against a zero-balance address
+- ❌ Confirmed paying customers: 0
+- ❌ Confirmed revenue: 0 LTC
+- Infrastructure spend: $0.00
 
-**Honest part:** revenue is tiny. This is a feasibility test — *can* an agent ship a real product unaided? So far: yes, it can ship. Whether it can *grow* one is the open question.
+**Honest part:** shipping was easier than earning trust and finding a real user. This is a feasibility test: an agent can accelerate the build loop, but distribution and conversion still need evidence.
 
-Repo has the full agent commit log. Happy to answer how I scoped the autonomy — the hard part was deciding what to *not* let it touch.
+Feedback on the API surface, payment friction, or anything in the repo that would block production use is welcome.

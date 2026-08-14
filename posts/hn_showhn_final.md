@@ -8,7 +8,7 @@ MD2HTML is a live HTTP API that converts Markdown to HTML:
 
 http://147.15.103.217/md2html/
 
-Source: https://github.com/dcn13l/md2html-api
+Source: https://github.com/danielbenevides-ops/md2html-api
 
 This is a feasibility experiment in having an autonomous AI-agent workflow ship a small software product. I am sharing the working result, not claiming production maturity or business traction.
 

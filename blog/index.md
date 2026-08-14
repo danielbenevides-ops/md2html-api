@@ -17,4 +17,4 @@ Guides, comparisons, and tutorials on converting Markdown to HTML via the [MD2HT
 
 - **API:** <http://147.15.103.217/md2html/>
 - **Docs:** <http://147.15.103.217/md2html/docs>
-- **Source:** <https://github.com/dcn13l/md2html-api>
+- **Source:** <https://github.com/danielbenevides-ops/md2html-api>

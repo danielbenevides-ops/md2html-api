@@ -4,19 +4,19 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Dependencies: none](https://img.shields.io/badge/dependencies-none-2ea44f)](#features)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](#license)
-[![GitHub stars](https://img.shields.io/github/stars/dcn13l/md2html-api?style=social)](https://github.com/dcn13l/md2html-api/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/danielbenevides-ops/md2html-api?style=social)](https://github.com/danielbenevides-ops/md2html-api/stargazers)
 
 > Convert Markdown to clean HTML and use a practical set of developer utilities over HTTP. **Python standard library only. No pip install. No subscriptions.**
 
 **Live API:** <http://147.15.103.217/md2html/>
-**Repository:** <https://github.com/dcn13l/md2html-api>
-**Release:** `v1.3.0` — 18 endpoints, LTC micropayments, and an enhanced landing page
+**Repository:** <https://github.com/danielbenevides-ops/md2html-api>
+**Release:** `v1.4.0` — 26 endpoints, LTC micropayments, and an enhanced landing page
 
 ## ⭐ Stargazers
 
-If MD2HTML API is useful, [star the repository](https://github.com/dcn13l/md2html-api) to help other developers discover this zero-dependency Markdown→HTML API.
+If MD2HTML API is useful, [star the repository](https://github.com/danielbenevides-ops/md2html-api) to help other developers discover this zero-dependency Markdown→HTML API.
 
-[View all stargazers](https://github.com/dcn13l/md2html-api/stargazers) · [Watch releases](https://github.com/dcn13l/md2html-api/subscription)
+[View all stargazers](https://github.com/danielbenevides-ops/md2html-api/stargazers) · [Watch releases](https://github.com/danielbenevides-ops/md2html-api/subscription)
 
 ## Why MD2HTML?
 
@@ -51,20 +51,36 @@ Want to self-host? Jump to [Self-Host](#self-host).
 
 **Base URL:** `http://147.15.103.217/md2html` · **Port:** `8777` · **Rate limit:** 30 req/min/IP · **Max body:** 1MB
 
-Only `POST` endpoints (`/convert`, `/json/prettify`, `/text/stats`, `/slug`) are billed. All `GET` endpoints are free. Add `-H "X-API-Key: <key>"` to bill against your key rather than your IP.
+Billable `POST` endpoints are marked ✓ below; API-key management, registration, and webhook control routes are free. All `GET` endpoints are free. Add `-H 'X-API-Key: <YOUR_API_KEY>'` to bill against your key rather than your IP.
 
 | # | Method | Endpoint | Billed | Description |
 |---|--------|----------|:------:|-------------|
-| 1 | `GET`  | `/health` | — | Readiness probe: status, version, uptime, endpoint manifest |
-| 2 | `GET`  | `/register` | — | Mint a new API key (own free-tier bucket) |
-| 3 | `POST` | `/convert` | ✓ | Convert Markdown to styled HTML (max 50KB markdown) |
-| 4 | `POST` | `/json/prettify` | ✓ | Pretty-print a compact JSON document |
-| 5 | `POST` | `/text/stats` | ✓ | Word count, char count, reading time, top words |
-| 6 | `POST` | `/slug` | ✓ | Generate a URL-safe slug from a title |
-| 7 | `GET`  | `/docs` | — | Plain-text usage guide for the entire API |
-| 8 | `GET`  | `/pricing` | — | Public plan and rate-limit information |
-| 9 | `GET`  | `/payment` | — | LTC wallet address for pay-per-call billing |
-| 10 | `GET` | `/usage` | — | Current usage and remaining free-tier calls |
+| 1 | `GET` | `/health` | — | Readiness probe: status, version, uptime, endpoint manifest |
+| 2 | `GET` | `/register` | — | Mint a new API key (own free-tier bucket) |
+| 3 | `GET` | `/keys/info` | — | Show the authenticated API key's plan and usage |
+| 4 | `POST` | `/keys/revoke` | — | Revoke the authenticated API key |
+| 5 | `POST` | `/keys/rotate` | — | Rotate the authenticated API key |
+| 6 | `POST` | `/convert` | ✓ | Convert Markdown to styled HTML (max 50KB markdown) |
+| 7 | `POST` | `/markdown/lint` | ✓ | Validate Markdown syntax and return warnings |
+| 8 | `POST` | `/html/minify` | ✓ | Minify HTML source |
+| 9 | `POST` | `/table/parse` | ✓ | Parse a Markdown pipe table into JSON |
+| 10 | `POST` | `/sanitize` | ✓ | Escape raw HTML in Markdown before converting it |
+| 11 | `POST` | `/batch` | ✓ | Convert up to 50 Markdown strings in one request |
+| 12 | `POST` | `/webhook/register` | — | Register a batch-completion callback |
+| 13 | `POST` | `/webhook/test` | — | Send a test webhook event |
+| 14 | `POST` | `/minify` | ✓ | Minify HTML, CSS, or JavaScript source |
+| 15 | `POST` | `/html/extract` | ✓ | Extract visible text from HTML |
+| 16 | `POST` | `/url/shorten` | ✓ | Create an idempotent base62 short code for an HTTP(S)/FTP URL |
+| 17 | `POST` | `/cron/parse` | ✓ | Turn a five-field cron expression into a human description |
+| 18 | `POST` | `/regex/test` | ✓ | Test a regular expression and return match details |
+| 19 | `POST` | `/json/prettify` | ✓ | Pretty-print a compact JSON document |
+| 20 | `POST` | `/text/stats` | ✓ | Word count, char count, reading time, top words |
+| 21 | `POST` | `/slug` | ✓ | Generate a URL-safe slug from a title |
+| 22 | `GET` | `/docs` | — | Plain-text usage guide for the entire API |
+| 23 | `GET` | `/pricing` | — | Public plan and rate-limit information |
+| 24 | `GET` | `/payment` | — | LTC wallet address for pay-per-call billing |
+| 25 | `GET` | `/usage` | — | Current usage and remaining free-tier calls |
+| 26 | `GET` | `/stats` | — | Aggregate call and client statistics |
 
 ### 1. `GET /health`
 
@@ -73,7 +89,7 @@ curl http://147.15.103.217/md2html/health
 ```
 ```json
 {"status":"ok","version":"1.4.0","uptime_seconds":3612.5,"uptime":"0d 1h 0m 12s","port":8777,
- "endpoints":["/health","/register","/convert","/json/prettify","/text/stats","/slug","/docs","/pricing","/payment","/usage","/stats"]}
+ "endpoints":["/health","/register","/keys/info","/keys/revoke","/keys/rotate","/convert","/markdown/lint","/html/minify","/table/parse","/sanitize","/batch","/webhook/register","/webhook/test","/minify","/html/extract","/url/shorten","/cron/parse","/regex/test","/json/prettify","/text/stats","/slug","/docs","/pricing","/payment","/usage","/stats"]}
 ```
 
 ### 2. `GET /register`
@@ -86,7 +102,7 @@ curl http://147.15.103.217/md2html/register
  "free_tier_limit":10,"calls_made":0,"remaining":10}
 ```
 
-### 3. `POST /convert`
+### 6. `POST /convert`
 
 Supports headings, bold, italic, links, inline code, fenced code blocks, unordered lists. Body: `application/json` (`{"markdown": "..."}`) or `text/plain` (raw markdown). Max markdown input: 50KB.
 
@@ -100,7 +116,7 @@ curl -X POST http://147.15.103.217/md2html/convert \
  "billing":{"status":"ok","call_count":1,"remaining":9}}
 ```
 
-### 4. `POST /json/prettify`
+### 19. `POST /json/prettify`
 
 Input JSON string goes in the `"json"` field (not the request body itself).
 
@@ -113,7 +129,7 @@ curl -X POST http://147.15.103.217/md2html/json/prettify \
 {"prettified":"{\n  \"a\": 1,\n  \"b\": 2\n}","billing":{"status":"ok","call_count":3,"remaining":7}}
 ```
 
-### 5. `POST /text/stats`
+### 20. `POST /text/stats`
 
 ```bash
 curl -X POST http://147.15.103.217/md2html/text/stats \
@@ -125,7 +141,7 @@ curl -X POST http://147.15.103.217/md2html/text/stats \
  "top_words":[["the",2],["quick",1]],"billing":{"status":"ok","call_count":4,"remaining":6}}
 ```
 
-### 6. `POST /slug`
+### 21. `POST /slug`
 
 Input goes in the `"title"` field. Handles non-ASCII and special characters.
 
@@ -138,13 +154,13 @@ curl -X POST http://147.15.103.217/md2html/slug \
 {"slug":"cafe-menus-drinks","billing":{"status":"ok","call_count":5,"remaining":5}}
 ```
 
-### 7. `GET /docs`
+### 22. `GET /docs`
 
 ```bash
 curl http://147.15.103.217/md2html/docs
 ```
 
-### 8. `GET /pricing`
+### 23. `GET /pricing`
 
 No auth, not billed.
 
@@ -157,7 +173,7 @@ curl http://147.15.103.217/md2html/pricing
  "rate_limit":{"max":30,"window_seconds":60},"max_body_bytes":1048576}
 ```
 
-### 9. `GET /payment`
+### 24. `GET /payment`
 
 ```bash
 curl http://147.15.103.217/md2html/payment
@@ -167,9 +183,9 @@ curl http://147.15.103.217/md2html/payment
  "message":"Send any amount of Litecoin to this address to continue using the API after the free tier."}
 ```
 
-### 10. `GET /usage`
+### 25. `GET /usage`
 
-Query by IP (no header) or by API key (`-H "X-API-Key: ..."`).
+Query by IP (no header) or by API key (`-H 'X-API-Key: <YOUR_API_KEY>'`).
 
 ```bash
 curl http://147.15.103.217/md2html/usage
@@ -222,7 +238,7 @@ curl http://147.15.103.217/md2html/register
 
 curl -X POST http://147.15.103.217/md2html/convert \
   -H 'Content-Type: application/json' \
-  -H 'X-API-Key: mk_...' \
+  -H 'X-API-Key: <YOUR_API_KEY>' \
   -d '{"markdown":"## Keyed request"}'
 ```
 
@@ -243,36 +259,59 @@ with urlopen(request) as response:
 
 This example uses only the Python standard library; add an `X-API-Key` header when you want a separate free-tier bucket.
 
-## API reference — 18 endpoints
+## API reference — 26 endpoints
 
-The v1.3.0 core endpoint manifest contains the 18 routes below. All six utility/conversion operations added for the v1.3.0 release use the same billing model and accept an optional `X-API-Key` header.
+The v1.4.0 core endpoint manifest contains the 26 routes below. Billable conversion and utility operations use the same billing model and accept an optional `X-API-Key` header; API-key management and webhook control routes are free.
 
 | # | Method | Endpoint | Billing | Description |
 |---:|---|---|---|---|
 | 1 | `GET` | `/health` | Free | Readiness, version, uptime, limits, and the endpoint manifest |
 | 2 | `GET` | `/register` | Free | Mint an API key for an independent free-tier bucket |
-| 3 | `POST` | `/convert` | Billable | Convert Markdown to HTML; JSON or `text/plain` input |
-| 4 | `POST` | `/sanitize` | Billable | Escape raw HTML in Markdown before converting it |
-| 5 | `POST` | `/batch` | Billable | Convert up to 50 Markdown strings in one request |
-| 6 | `POST` | `/minify` | Billable | Minify HTML, CSS, or JavaScript source |
-| 7 | `POST` | `/html/extract` | Billable | Extract visible text from HTML |
-| 8 | `POST` | `/url/shorten` | Billable | Create an idempotent base62 short code for an HTTP(S)/FTP URL |
-| 9 | `POST` | `/cron/parse` | Billable | Turn a five-field cron expression into a human description |
-| 10 | `POST` | `/regex/test` | Billable | Test a regular expression and return match details |
-| 11 | `POST` | `/json/prettify` | Billable | Pretty-print a compact JSON document with two-space indentation |
-| 12 | `POST` | `/text/stats` | Billable | Return word, character, reading-time, and top-word statistics |
-| 13 | `POST` | `/slug` | Billable | Generate a URL-safe slug from a title |
-| 14 | `GET` | `/docs` | Free | Plain-text usage guide with request examples |
-| 15 | `GET` | `/pricing` | Free | Free-tier, LTC price, wallet, rate-limit, and body-limit details |
-| 16 | `GET` | `/payment` | Free | LTC wallet and payment instructions |
-| 17 | `GET` | `/usage` | Free | Current client usage and remaining free calls |
-| 18 | `GET` | `/stats` | Free | Aggregate call and client statistics |
+| 3 | `GET` | `/keys/info` | Free | Show the authenticated key's plan and usage |
+| 4 | `POST` | `/keys/revoke` | Free | Revoke the authenticated API key |
+| 5 | `POST` | `/keys/rotate` | Free | Rotate the authenticated API key |
+| 6 | `POST` | `/convert` | Billable | Convert Markdown to HTML; JSON or `text/plain` input |
+| 7 | `POST` | `/markdown/lint` | Billable | Validate Markdown syntax and return warnings |
+| 8 | `POST` | `/html/minify` | Billable | Minify HTML source |
+| 9 | `POST` | `/table/parse` | Billable | Parse a Markdown pipe table into JSON |
+| 10 | `POST` | `/sanitize` | Billable | Escape raw HTML in Markdown before converting it |
+| 11 | `POST` | `/batch` | Billable | Convert up to 50 Markdown strings in one request |
+| 12 | `POST` | `/webhook/register` | Free | Register a batch-completion callback |
+| 13 | `POST` | `/webhook/test` | Free | Send a test webhook event |
+| 14 | `POST` | `/minify` | Billable | Minify HTML, CSS, or JavaScript source |
+| 15 | `POST` | `/html/extract` | Billable | Extract visible text from HTML |
+| 16 | `POST` | `/url/shorten` | Billable | Create an idempotent base62 short code for an HTTP(S)/FTP URL |
+| 17 | `POST` | `/cron/parse` | Billable | Turn a five-field cron expression into a human description |
+| 18 | `POST` | `/regex/test` | Billable | Test a regular expression and return match details |
+| 19 | `POST` | `/json/prettify` | Billable | Pretty-print a compact JSON document with two-space indentation |
+| 20 | `POST` | `/text/stats` | Billable | Return word, character, reading-time, and top-word statistics |
+| 21 | `POST` | `/slug` | Billable | Generate a URL-safe slug from a title |
+| 22 | `GET` | `/docs` | Free | Plain-text usage guide with request examples |
+| 23 | `GET` | `/pricing` | Free | Free-tier, LTC price, wallet, rate-limit, and body-limit details |
+| 24 | `GET` | `/payment` | Free | LTC wallet and payment instructions |
+| 25 | `GET` | `/usage` | Free | Current client usage and remaining free calls |
+| 26 | `GET` | `/stats` | Free | Aggregate call and client statistics |
 
 Additional operational routes are also available: `GET /swagger.json` (OpenAPI 3.0), `GET /uptime`, `GET /` and `GET /index.html` (enhanced landing page), and `OPTIONS` for CORS preflight.
 
 ### Conversion and content utilities
 
 ```bash
+# Lint Markdown
+curl -X POST http://147.15.103.217/md2html/markdown/lint \
+  -H 'Content-Type: application/json' \
+  -d '{"markdown":"#Hello"}'
+
+# Minify HTML source
+curl -X POST http://147.15.103.217/md2html/html/minify \
+  -H 'Content-Type: application/json' \
+  -d '{"html":"<div>  <!-- comment --> hello </div>"}'
+
+# Parse a Markdown table
+curl -X POST http://147.15.103.217/md2html/table/parse \
+  -H 'Content-Type: application/json' \
+  -d '{"markdown":"| Name | Age |\n| --- | ---: |\n| Ada | 36 |"}'
+
 # Sanitize untrusted Markdown
 curl -X POST http://147.15.103.217/md2html/sanitize \
   -H 'Content-Type: application/json' \
@@ -292,6 +331,30 @@ curl -X POST http://147.15.103.217/md2html/minify \
 curl -X POST http://147.15.103.217/md2html/html/extract \
   -H 'Content-Type: application/json' \
   -d '{"html":"<h1>Hello</h1><p>World</p>"}'
+```
+
+### API keys and webhooks
+
+```bash
+# Inspect an API key's plan and usage
+curl http://147.15.103.217/md2html/keys/info \
+  -H 'X-API-Key: <YOUR_API_KEY>'
+
+# Rotate the current API key (returns a replacement key)
+curl -X POST http://147.15.103.217/md2html/keys/rotate \
+  -H 'X-API-Key: <YOUR_API_KEY>'
+
+# Revoke the current API key
+curl -X POST http://147.15.103.217/md2html/keys/revoke \
+  -H 'X-API-Key: <YOUR_API_KEY>'
+
+# Register a batch-completion webhook
+curl -X POST http://147.15.103.217/md2html/webhook/register \
+  -H 'Content-Type: application/json' \
+  -d '{"callback_url":"https://example.com/md2html-hook"}'
+
+# Send a test webhook event
+curl -X POST http://147.15.103.217/md2html/webhook/test
 ```
 
 ### Developer utilities
@@ -340,7 +403,7 @@ curl -X POST http://147.15.103.217/md2html/slug \
 Requirements: Python 3.8 or newer. The server has no third-party runtime dependencies.
 
 ```bash
-git clone https://github.com/dcn13l/md2html-api.git
+git clone https://github.com/danielbenevides-ops/md2html-api.git
 cd md2html-api
 python server.py
 # Markdown-to-HTML API on http://0.0.0.0:8777
@@ -402,4 +465,4 @@ Issues and pull requests are welcome. Please run the test and compile commands a
 
 MIT.
 
-**Live API:** <http://147.15.103.217/md2html/> · **Source:** <https://github.com/dcn13l/md2html-api>
+**Live API:** <http://147.15.103.217/md2html/> · **Source:** <https://github.com/danielbenevides-ops/md2html-api>

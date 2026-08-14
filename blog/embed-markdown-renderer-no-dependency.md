@@ -136,4 +136,4 @@ curl -X POST http://147.15.103.217/md2html/convert \
   -d '{"markdown": "# Ship HTML, not parser dependencies"}'
 ```
 
-API docs at <http://147.15.103.217/md2html/docs>. Source and self-host instructions at [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api).
+API docs at <http://147.15.103.217/md2html/docs>. Source and self-host instructions at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api).

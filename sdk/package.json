@@ -5,7 +5,7 @@
   "main": "md2html-client.js",
   "homepage": "http://147.15.103.217/md2html/",
   "license": "MIT",
-  "author": "dcn13l",
+  "author": "danielbenevides-ops",
   "engines": {
     "node": ">=18"
   },
@@ -32,7 +32,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/dcn13l/md2html-api",
+    "url": "https://github.com/danielbenevides-ops/md2html-api",
     "directory": "sdk"
   },
   "scripts": {

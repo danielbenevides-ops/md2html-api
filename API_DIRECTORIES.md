@@ -242,7 +242,7 @@ The five highest-leverage targets, ranked by audience reach and fit, are flagged
   4. Add row in the section's markdown table in alphabetical order, marking 💸 or 📖 per the convention.
   5. Squash commits; PR titled "Add MD2HTML to <Section>" squashed.
   6. The maintainer (@abgbm on Twitter) reviews and may promote on launch.
-- **MD2HTML fit:** Good — "Content" or "Documents" section match; the 💸/📖 marker suits MD2HTML's freemium model (10 free + paid). If MD2HTML's repo is OSS (per MARKET_RESEARCH_v3 it has github.com/dcn13l/md2html-api), mark 📖 for extra credibility.
+- **MD2HTML fit:** Good — "Content" or "Documents" section match; the 💸/📖 marker suits MD2HTML's freemium model (10 free + paid). If MD2HTML's repo is OSS (per MARKET_RESEARCH_v3 it has github.com/danielbenevides-ops/md2html-api), mark 📖 for extra credibility.
 
 ---
 

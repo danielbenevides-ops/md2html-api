@@ -50,7 +50,7 @@ from pathlib import Path
 # -------------------------------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent
-WALLET_ADDR = "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM"          # LTC mainnet
+WALLET_ADDR = "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG"          # LTC mainnet
 USAGE_FILE = BASE_DIR / "usage.json"
 TXLOG_FILE = BASE_DIR / "transactions.json"
 STATE_FILE = BASE_DIR / ".payments_state.json"               # tracks processed tx ids

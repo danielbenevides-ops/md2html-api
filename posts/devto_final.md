@@ -1,18 +1,18 @@
 ---
-title: "A Dependency-Free Markdown-to-HTML API You Can Call with curl"
+title: "A curl-Friendly Markdown-to-HTML API"
 published: false
-description: "A factual walkthrough of MD2HTML API: Markdown conversion and small developer utilities over HTTP."
+description: "A factual walkthrough of MD2HTML API: Markdown conversion and related developer utilities over HTTP."
 tags: api, python, devtools, opensource
 canonical_url: ""
 cover_image: ""
 ---
 
-# A Dependency-Free Markdown-to-HTML API You Can Call with `curl`
+# A curl-Friendly Markdown-to-HTML API
 
-MD2HTML API is a small HTTP service for converting Markdown to HTML and running a few related developer utilities. The public source is on GitHub, and the live service is available at:
+MD2HTML API is an HTTP service for converting Markdown to HTML and running related developer utilities. The public source is on GitHub, and the live service is available at:
 
 - **API:** <http://147.15.103.217/md2html/>
-- **Repository:** <https://github.com/dcn13l/md2html-api>
+- **Repository:** <https://github.com/danielbenevides-ops/md2html-api>
 
 This is a project description and usage guide—not a claim about customer adoption, uptime guarantees, or performance benchmarks.
 
@@ -26,15 +26,18 @@ curl -X POST http://147.15.103.217/md2html/convert \
   -d '{"markdown":"# Hello **world**\n\n- one\n- two"}'
 ```
 
-The response is JSON with an `html` field and billing metadata. The exact counters depend on the client making the request.
+The endpoint returns JSON. A successful conversion includes an `html` field and billing metadata; counters and availability depend on the client and the current service state.
 
-A live check performed while preparing this article returned HTTP 200 from `/convert` and an HTML result for Markdown input. The health endpoint also returned `{"status":"ok"}` and reported release version `1.3.0` at that moment. Those are point-in-time observations, not a promise that the service will always be available.
+At verification, `GET /health` returned HTTP 200 with `{"status":"ok"}` and version `1.4.0`. Conversion access is subject to the per-client free tier and rate limit, so this point-in-time check is not an uptime or availability guarantee.
 
 ## What is available
 
-The live `/health` response currently lists these routes:
+The current `/health` response advertises 26 routes. Among them are:
 
+- `GET /register` and `/keys/info` — API-key registration and usage information
 - `POST /convert` — Markdown to HTML
+- `POST /markdown/lint` — report Markdown syntax warnings
+- `POST /html/minify` and `/table/parse` — content utilities
 - `POST /sanitize` — sanitize Markdown input
 - `POST /batch` — convert multiple Markdown strings
 - `POST /minify` — minify HTML, CSS, or JavaScript
@@ -50,19 +53,19 @@ There are also public `GET` routes for health, documentation, pricing, payment i
 
 ## Pricing and limits
 
-At the time of verification, the live `/pricing` endpoint reported a 10-call free tier, followed by a listed price of `$0.001` per call in LTC. It also reported a 30-request-per-minute IP rate limit and a 1 MiB maximum request body. Limits and pricing can change, so the API response is the authoritative reference.
+At the time of verification, the live `/pricing` endpoint reported 10 free calls per client (identified by IP or `X-API-Key`), followed by a listed price of `$0.001` per call in LTC. It also reported a 30-request-per-minute IP rate limit and a 1 MiB maximum request body. These are published service terms—not evidence that a payment was sent, verified, or credited—so the live API response remains authoritative.
 
 ## Run it yourself
 
-The repository documents Python 3.8+ and no third-party runtime dependencies:
+The reference repository documents Python 3.8+ and a Python-standard-library-only runtime:
 
 ```bash
-git clone https://github.com/dcn13l/md2html-api.git
+git clone https://github.com/danielbenevides-ops/md2html-api.git
 cd md2html-api
 python server.py
 ```
 
-For a local instance, the server listens on port `8777` according to the project documentation. Review the repository's deployment and security notes before exposing a self-hosted instance to the internet.
+For a local instance, the server listens on port `8777` according to the project documentation. This describes the reference implementation, not the hosted service's deployment topology, redundancy, or SLA. Review the repository's deployment and security notes before exposing a self-hosted instance to the internet.
 
 ## Why this is useful
 
@@ -71,4 +74,4 @@ For a script, CI job, documentation pipeline, or small internal tool, an HTTP bo
 No third-party quotes or adoption figures are included because they are not needed to try the API. If you use it, evaluate the output and the repository for yourself.
 
 **Live API:** <http://147.15.103.217/md2html/>  
-**Source:** <https://github.com/dcn13l/md2html-api>
+**Source:** <https://github.com/danielbenevides-ops/md2html-api>

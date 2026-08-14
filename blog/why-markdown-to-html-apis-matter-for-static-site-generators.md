@@ -84,7 +84,7 @@ A common objection: *why not just `marked` on the client and `markdown` in the b
 
 The MD2HTML API offers 10 free conversions so you can wire it into a pipeline and kick the tires. After that, it's pay-per-call in Litecoin — useful for teams that want a hosted endpoint without a credit-card on file or for solo devs who'd rather pay per use than subscribe.
 
-Prefer to run it yourself? The full source is on GitHub at [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api). Clone it, read the README, deploy to a VPS or container, and point your services at your own instance — same API surface, your own rate limits.
+Prefer to run it yourself? The full source is on GitHub at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api). Clone it, read the README, deploy to a VPS or container, and point your services at your own instance — same API surface, your own rate limits.
 
 ## Bottom line
 
@@ -93,4 +93,4 @@ For a single Hugo blog, the bundled parser is all you need. The moment Markdown 
 **Links**
 
 - API: <http://147.15.103.217/md2html>
-- Source: <https://github.com/dcn13l/md2html-api>
+- Source: <https://github.com/danielbenevides-ops/md2html-api>

@@ -1,7 +1,7 @@
 # 10 Communities for MD2HTML API — Posting Targets This Week
 
 > **Product:** MD2HTML API — free markdown-to-HTML API. 10 free calls, then LTC micropayments.
-> **Source:** github.com/dcn13l/md2html-api · **Live:** http://147.15.103.217/md2html/
+> **Source:** github.com/danielbenevides-ops/md2html-api · **Live:** http://147.15.103.217/md2html/
 > Researched Aug 7, 2026. Verify rules before each post — they change.
 
 ---
@@ -174,7 +174,7 @@
 
 - **URL:** How to Answer guide: https://stackoverflow.com/help/how-to-answer · Post answers: https://stackoverflow.com/questions/tagged/markdown or https://stackoverflow.com/questions/tagged/markdown-converter
 - **Rules (verified Aug 8 from official help page):** 1) **Read the question carefully** — answer what's asked or provide a viable alternative. 2) **Provide context for links** — never bare-link answers; quote the relevant part of any linked resource in case it goes offline. 3) **Write to the best of your ability** — correct spelling, grammar, full explanations over brevity. 4) **Answer well-asked questions** — avoid unclear, opinion-based, or duplicate questions. 5) **Always be polite and have fun** — be civil even when disagreeing. **No outright self-promotion** — answers should solve a problem; mentioning your own project is acceptable only when directly relevant and disclosed ("full disclosure: I built this").
-- **Strategy for MD2HTML:** Search for questions about converting markdown to HTML, markdown parsing in Python/JS, or markdown-to-HTML APIs. When a question aligns, write a complete, helpful answer that includes code (using any tool/tool). At the end, naturally mention: "Full disclosure: I maintain MD2HTML (github.com/dcn13l/md2html-api) — a free API that does this with one POST call." Build answer quality (upvotes) → reputation impact → discovery.
+- **Strategy for MD2HTML:** Search for questions about converting markdown to HTML, markdown parsing in Python/JS, or markdown-to-HTML APIs. When a question aligns, write a complete, helpful answer that includes code (using any tool/tool). At the end, naturally mention: "Full disclosure: I maintain MD2HTML (github.com/danielbenevides-ops/md2html-api) — a free API that does this with one POST call." Build answer quality (upvotes) → reputation impact → discovery.
 - **Account reqs:** Free StackOverflow account (email or OAuth). **50 reputation points** required to comment on other people's posts. No minimum to answer questions. A brand-new account can answer immediately but answers from low-rep accounts may be auto-reviewed.
 - **Best day/time:** Answer actively-asked questions (fresh > old). Weekday mornings US time maximize visibility (tag watchers are most active). Prioritize questions tagged `markdown`, `markdown-to-html`, or `api` with no accepted answer yet.
 - **Pitch (answer structure):** Full working code example solving the question → brief explanation → "For a hosted option, MD2HTML does this server-side with one POST call — free for 10 calls, open source."

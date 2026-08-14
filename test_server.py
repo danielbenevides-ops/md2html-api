@@ -130,6 +130,15 @@ class MD2HTMLAPITest(unittest.TestCase):
         self.assertIn("post", spec["paths"]["/webhook/register"])
         self.assertIn("post", spec["paths"]["/webhook/test"])
 
+    def test_public_wallet_config_is_consistent_and_contains_no_secrets(self):
+        public_wallet = json.loads((ROOT / "wallet_public.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(public_wallet["network"], "litecoin-mainnet")
+        self.assertEqual(public_wallet["address"], billing.CRYPTO_WALLET)
+        self.assertEqual(server.WALLET_ADDRESS, billing.CRYPTO_WALLET)
+        self.assertNotIn("private_key_wif", public_wallet)
+        self.assertNotIn("private_key_hex", public_wallet)
+
     def test_convert_basic_markdown_to_html(self):
         key = self.key()
         markdown = "# Hello\n\n**bold** and *italic*\n\n- one\n- two"

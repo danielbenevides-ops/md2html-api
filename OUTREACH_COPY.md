@@ -1,7 +1,7 @@
 # MD2HTML API — Outreach Copy
 
 API base URL: `http://147.15.103.217/md2html`
-GitHub: <https://github.com/dcn13l/md2html-api>
+GitHub: <https://github.com/danielbenevides-ops/md2html-api>
 Pricing: 10 free calls, then pay per call via Litecoin
 
 ---
@@ -39,7 +39,7 @@ That's the whole thing. One POST to `/convert`, JSON in, JSON out.
 - **Endpoint:** `POST http://147.15.103.217/md2html/convert`
 - **10 free calls** to try it, then pay per call via Litecoin — no signup wall, no monthly plan
 - **Use cases:** CMS input sanitization, docs builds, email templates, AI output rendering, anywhere you'd rather not ship a parser dependency
-- **Source:** <https://github.com/dcn13l/md2html-api>
+- **Source:** <https://github.com/danielbenevides-ops/md2html-api>
 
 Not trying to replace your in-app GFM/CommonMark renderer — if a library works for you, keep it. This is for when you want a clean service boundary (e.g. untrusted user markdown, serverless functions where you don't want a parser bundle, or a docs pipeline where one service owns the render step).
 
@@ -59,7 +59,7 @@ Hey HN — I built a small markdown-to-HTML API after one too many times bolting
 
 - **Endpoint:** `POST http://147.15.103.217/md2html/convert`
 - **Pricing:** 10 free calls, then pay per call via Litecoin — no monthly fee, no card on file
-- **Source (open):** <https://github.com/dcn13l/md2html-api>
+- **Source (open):** <https://github.com/danielbenevides-ops/md2html-api>
 
 Example:
 
@@ -98,7 +98,7 @@ Send JSON with a `markdown` field, get JSON back with an `html` field. That's it
 
 - 10 free calls to start
 - After that, pay per call via Litecoin — no monthly plan, no card on file
-- Open source: <https://github.com/dcn13l/md2html-api>
+- Open source: <https://github.com/danielbenevides-ops/md2html-api>
 
 ### Quick test
 
@@ -170,7 +170,7 @@ Use MD2HTML when you want render-as-a-service instead of shipping a parser:
 ### Try it
 
 - API: <http://147.15.103.217/md2html>
-- Source & docs: <https://github.com/dcn13l/md2html-api>
+- Source & docs: <https://github.com/danielbenevides-ops/md2html-api>
 
 If you'd want a different option (sanitize-only mode, syntax highlighting hooks, custom renderer config), open an issue on the repo — I'm actively iterating on what the endpoint should expose.
 
@@ -186,4 +186,24 @@ If you'd want a different option (sanitize-only mode, syntax highlighting hooks,
 | Response | `{"html": "..."}` |
 | Free tier | 10 calls |
 | Paid | per call via Litecoin |
-| GitHub | <https://github.com/dcn13l/md2html-api> |
+| GitHub | <https://github.com/danielbenevides-ops/md2html-api> |
+
+---
+
+## 4. Permission-based email (draft only)
+
+**Send gate:** Use only for a recipient who explicitly opted in or requested product updates. Do not use scraped/public addresses, buy lists, or send follow-ups without a reply. This workspace contains no mail-sending integration or approved/opt-in MD2HTML recipient list.
+
+**Subject:** Markdown → HTML over HTTP for $0.001/call in LTC
+
+Hi [Name],
+
+If your app turns Markdown into HTML, MD2HTML offers a small hosted option: one JSON `POST`, no SDK, with usage priced at **$0.001 per call in Litecoin (LTC)**.
+
+Try it here: <http://147.15.103.217/md2html/>
+Docs/source: <https://github.com/danielbenevides-ops/md2html-api>
+
+Would this fit a docs, CMS, or AI-output pipeline? If not relevant, reply “stop” and I won’t contact you again.
+
+Thanks,
+MD2HTML

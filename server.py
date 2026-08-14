@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 from html.parser import HTMLParser
 from billing import (
     record_call, register_client, check_usage, generate_api_key, is_valid_api_key,
-    _load_usage, _save_usage, FREE_TIER_LIMIT,
+    _load_usage, _save_usage, FREE_TIER_LIMIT, CRYPTO_WALLET,
 )
 from analytics import log_call, get_stats, daily_report
 from extra_endpoints import HANDLERS as ENDPOINT_HANDLERS  # /json/prettify, /text/stats, /slug
@@ -49,13 +49,9 @@ def _base62_encode(n):
         n //= 62
     return "".join(reversed(out))
 
-# Load real LTC wallet address from wallet.json
-_WALLET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wallet.json")
-try:
-    with open(_WALLET_FILE) as _f:
-        WALLET_ADDRESS = json.load(_f).get("address", "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM")
-except Exception:
-    WALLET_ADDRESS = "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM"
+# Public LTC address comes from billing.py (env override or wallet_public.json).
+# The API process never reads wallet.json, which contains private key material.
+WALLET_ADDRESS = CRYPTO_WALLET
 
 # --- Rate limiter (thread-safe, in-memory) ---
 _rate_lock = threading.Lock()
@@ -1099,7 +1095,7 @@ SWAGGER_SPEC = {
         "title": "MD2HTML API",
         "description": "Markdown-to-HTML conversion API with JSON/text utilities, billing, and analytics. Free tier: 10 calls per client (IP or X-API-Key), then HTTP 402 + LTC payment. Stdlib-only Python server.",
         "version": VERSION,
-        "contact": {"url": "https://github.com/dcn13l/md2html-api"},
+        "contact": {"url": "https://github.com/danielbenevides-ops/md2html-api"},
     },
     "servers": [
         {"url": "http://147.15.103.217/md2html", "description": "Production VPS"},

@@ -1,6 +1,6 @@
 # Launch Posts — md2html-api
 
-> Ready-to-post distribution content for **github.com/dcn13l/md2html-api**
+> Ready-to-post distribution content for **github.com/danielbenevides-ops/md2html-api**
 > API that converts Markdown → HTML. $0.001/call via Litecoin, 10 free calls.
 
 ---
@@ -24,7 +24,7 @@ What's been genuinely interesting:
 - Pricing had to be near-zero to match value — it landed on micropayments naturally
 - Distribution is the hard part, not the code (who knew)
 
-Code is open: **github.com/dcn13l/md2html-api**
+Code is open: **github.com/danielbenevides-ops/md2html-api**
 
 Happy to answer questions about the API, the autonomous agent setup, or the micropayment approach. Honest feedback welcome — I know "AI built this" posts can feel gimmicky, so call it out if something reeks.
 
@@ -42,7 +42,7 @@ The first shipped product is md2html-api, a Markdown→HTML conversion API. It's
 
 The interesting part isn't the API (it's boring on purpose) — it's the meta-question of what happens when an AI agent owns the full business loop. The agent handled product scoping, code, repo setup, and even the marketing copy you're reading a draft of. Where it struggles is distribution and trust: no one has a reason to try an unknown API, and an AI can't fake reputation. That gap — the gap between "can build" and "can sell" — is the real finding so far.
 
-Code and docs are open at **github.com/dcn13l/md2html-api**. I'm documenting the full 30-day run. Curious what HN thinks: is the autonomous-agent-as-founder angle interesting, or is this just another wrapper? Happy to go deep on the agent architecture if anyone wants it.
+Code and docs are open at **github.com/danielbenevides-ops/md2html-api**. I'm documenting the full 30-day run. Curious what HN thinks: is the autonomous-agent-as-founder angle interesting, or is this just another wrapper? Happy to go deep on the agent architecture if anyone wants it.
 
 ---
 
@@ -72,7 +72,7 @@ Code and docs are open at **github.com/dcn13l/md2html-api**. I'm documenting the
 - The agent wrote the API, tests, docs, and repo README
 - Micropayments via Litecoin: no Stripe overhead, no accounts
 - Pricing decision: the agent landed on $0.001/call — why near-zero was correct
-- Open source on GitHub: github.com/dcn13l/md2html-api
+- Open source on GitHub: github.com/danielbenevides-ops/md2html-api
 
 **Day 13–20: Distribution (the hard part)**
 - Where AI founders break down: trust, reputation, reach
@@ -92,7 +92,7 @@ Code and docs are open at **github.com/dcn13l/md2html-api**. I'm documenting the
 - Call to action: try the API, read the repo, poke holes in the experiment
 
 **Sources / Links**
-- Repo: github.com/dcn13l/md2html-api
+- Repo: github.com/danielbenevides-ops/md2html-api
 - Hermes Agent docs
 - Raw 30-day log (to be published)
 
@@ -101,11 +101,11 @@ Code and docs are open at **github.com/dcn13l/md2html-api**. I'm documenting the
 ## 4. Twitter/X — 5-tweet thread
 
 **Tweet 1:**
-30 days ago I gave an AI agent $0 and the title of "CEO."
+Over the last week I used an AI agent to help build and deploy a small API on a $0 infrastructure budget.
 
-Its job: pick a product, build it, and sell it — with me only steering, not coding.
+I set the constraints and approved account-level actions; the agent handled much of the implementation and verification.
 
-Today it shipped its first product: a Markdown→HTML API.
+The result is a live Markdown→HTML and developer-utilities API.
 
 Here's what happened. 🧵
 
@@ -114,7 +114,7 @@ The product: md2html-api. One job — Markdown in, HTML out.
 
 10 free calls, then $0.001/call via Litecoin. No accounts, no API keys, no Stripe. Just send a request, pay in micropennies.
 
-Open source: github.com/dcn13l/md2html-api
+Open source: github.com/danielbenevides-ops/md2html-api
 
 **Tweet 3:**
 The agent (Hermes by Nous Research) did the whole build loop:
@@ -139,6 +139,6 @@ It cannot run the trust loop.
 
 That gap — reputation, relationships, credibility — is the unbuilt part of every "AI-run business" pitch.
 
-Repo + docs: github.com/dcn13l/md2html-api
+Repo + docs: github.com/danielbenevides-ops/md2html-api
 
 More to come.

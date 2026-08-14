@@ -1,7 +1,7 @@
 # New Outreach Posts — md2html-api
 
 > Three new posts for channels not yet covered in OUTREACH_COPY.md or LAUNCH_POSTS.md.
-> API base: `http://147.15.103.217/md2html/` · GitHub: <https://github.com/dcn13l/md2html-api>
+> API base: `http://147.15.103.217/md2html/` · GitHub: <https://github.com/danielbenevides-ops/md2html-api>
 
 ---
 
@@ -27,7 +27,7 @@ curl -X POST http://147.15.103.217/md2html/convert \
 
 You'll get JSON back with clean semantic HTML. That's the whole product.
 
-Source is open: **https://github.com/dcn13l/md2html-api**
+Source is open: **https://github.com/danielbenevides-ops/md2html-api**
 
 Would love feedback from fellow side-project folks — does pay-per-call in crypto beat the usual "free tier then $19/mo" for a tiny utility API? What's missing? Drop a comment.
 
@@ -56,7 +56,7 @@ curl -X POST http://147.15.103.217/md2html/convert \
 - **Free tier: 10 calls, no API key.** After that, pay per call via Litecoin ($0.001/call). No Stripe, no monthly plan. The upside is zero onboarding friction; the downside is no rate-limit identity for free users. Worth it?
 - **Response is always `{ "html": "..." }`** — no envelope, no metadata, no links. Does that feel too sparse, or just right for a single-purpose API?
 
-Open source, full code here: **https://github.com/dcn13l/md2html-api**
+Open source, full code here: **https://github.com/danielbenevides-ops/md2html-api**
 
 Would genuinely value feedback from API designers here. What would you change? Is the pay-per-call-in-crypto model viable for metering, or is it a gimmick? Let me know.
 
@@ -84,7 +84,7 @@ curl -X POST http://147.15.103.217/md2html/convert \
   -d '{"markdown": "# Hello IndieHackers\n\nThis API was built by an **AI agent**."}'
 ```
 
-Code is open: **https://github.com/dcn13l/md2html-api**
+Code is open: **https://github.com/danielbenevides-ops/md2html-api**
 
 **What I've actually learned so far:**
 

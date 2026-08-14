@@ -46,7 +46,7 @@ Rendering Markdown is CPU-bound, not memory-bound. Under load, a local parser ea
 
 ## Getting Started
 
-The MD2HTML API offers a free tier of 10 calls so you can prototype without a credit card. Past that, micropayments in Litecoin (LTC) unlock additional requests — no monthly subscription, no surprise billing. The full source lives at [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api), so you can self-host or audit the rendering pipeline before you trust it.
+The MD2HTML API offers a free tier of 10 calls so you can prototype without a credit card. Past that, micropayments in Litecoin (LTC) unlock additional requests — no monthly subscription, no surprise billing. The full source lives at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api), so you can self-host or audit the rendering pipeline before you trust it.
 
 ## The Takeaway
 

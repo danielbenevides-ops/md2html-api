@@ -1,6 +1,6 @@
 # Submission Drafts — MD2HTML API Awesome-List PRs
 
-> **Target project:** [dcn13l/md2html-api](https://github.com/dcn13l/md2html-api) — Free, open-source markdown-to-HTML API (10 free requests, micropayments via Litecoin beyond that). Homepage: http://147.15.103.217/md2html/
+> **Target project:** [danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api) — Free, open-source markdown-to-HTML API (10 free requests, micropayments via Litecoin beyond that). Homepage: http://147.15.103.217/md2html/
 > **Status:** DRAFTS for review. Do NOT submit without explicit user approval.
 
 ---
@@ -18,12 +18,12 @@ Add MD2HTML API to Text Analysis
 
 ### Exact README line to add (insert after row 1863, the Cloudmersive row)
 ```
-| [MD2HTML API](https://github.com/dcn13l/md2html-api) | Converts Markdown text to formatted HTML via REST API | `No` | Yes | Unknown |
+| [MD2HTML API](https://github.com/danielbenevides-ops/md2html-api) | Converts Markdown text to formatted HTML via REST API | `No` | Yes | Unknown |
 ```
 
 ### PR Body
 ```
-Adds [MD2HTML API](https://github.com/dcn13l/md2html-api) — a free, open-source
+Adds [MD2HTML API](https://github.com/danielbenevides-ops/md2html-api) — a free, open-source
 REST API that converts Markdown to HTML. 10 free requests;Litecoin micropayments
 beyond that. HTTPS endpoint, no auth required for free tier.
 
@@ -50,7 +50,7 @@ Add MD2HTML API to Markdown to Website/Blog
 
 ### Exact README line to add (append at end of `### Markdown to Website / Blog` section, before the `### Markdown to Email` header)
 ```
-**MD2HTML API** (github: [`dcn13l/md2html-api` :octocat:](https://github.com/dcn13l/md2html-api), web: [`147.15.103.217/md2html`](http://147.15.103.217/md2html/)) – Free, open-source REST API that converts Markdown to formatted HTML. 10 free requests; Litecoin micropayments beyond that.
+**MD2HTML API** (github: [`danielbenevides-ops/md2html-api` :octocat:](https://github.com/danielbenevides-ops/md2html-api), web: [`147.15.103.217/md2html`](http://147.15.103.217/md2html/)) – Free, open-source REST API that converts Markdown to formatted HTML. 10 free requests; Litecoin micropayments beyond that.
 ```
 
 ### PR Body

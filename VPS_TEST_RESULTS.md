@@ -67,7 +67,7 @@
 **Body:**
 ```json
 {
-  "wallet_address": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM",
+  "wallet_address": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
   "currency": "LTC",
   "message": "Send any amount of Litecoin to this address to continue using the API after the free tier."
 }

@@ -1,6 +1,25 @@
 __pycache__/
 *.pyc
+
+# Secrets and local credentials
+.env
+.env.*
+!.env.example
+wallet.json
+wallet.*.json
+*.pem
+*.key
+
+# Runtime state and logs
 usage.json
 analytics.json
 uptime.json
-wallet.json
+transactions.json
+payments_log.txt
+*.log
+
+# Local research/build artifacts
+.venv/
+venv/
+distribution/public-api-lists/
+daily-report-*.html

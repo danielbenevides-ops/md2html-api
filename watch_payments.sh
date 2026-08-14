@@ -1,6 +1,6 @@
 #!/bin/bash
 # Watch LTC wallet for incoming payments - loops every 60s
-WALLET="Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM"
+WALLET="Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG"
 LOG="payments_log.txt"
 echo "Watching $WALLET for payments... (Ctrl+C to stop)" >> "$LOG"
 while true; do

@@ -137,7 +137,7 @@ const res = await fetch('http://147.15.103.217/md2html/', {
 const { html } = await res.json();
 ```
 
-Source is open: [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api).
+Source is open: [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api).
 
 **Best for:** Production apps that want clean HTML without maintaining a parser, especially apps with user-generated Markdown, multi-platform clients, or tight server budgets.
 
@@ -159,6 +159,6 @@ Source is open: [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2htm
 
 If you're prototyping, a client library is fine. If you're shipping a real app with user-generated Markdown across multiple platforms, a dedicated **markdown to html api** removes a whole class of problems — dependency management, sanitization, consistency, CPU cost — for the price of one HTTP call.
 
-Try it free at `http://147.15.103.217/md2html/`. No signup, no API key for light use. Fork the code at [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api) if you want to self-host.
+Try it free at `http://147.15.103.217/md2html/`. No signup, no API key for light use. Fork the code at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api) if you want to self-host.
 
 Stop shipping parser bugs. Start shipping HTML.

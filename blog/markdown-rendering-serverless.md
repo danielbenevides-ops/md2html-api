@@ -58,7 +58,7 @@ def lambda_handler(event, context):
 
 ## Cost and Trust
 
-The MD2HTML API gives you 10 free calls to prototype against. Beyond that, LTC micropayments unlock additional requests — ideal for a serverless workload where you pay per invocation anyway. No fixed monthly fee means zero spend when traffic is idle, which is exactly how serverless billing is supposed to feel. The renderer's source is open at [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api), so you can audit the conversion logic or self-host if you ever need to pull it back on-platform.
+The MD2HTML API gives you 10 free calls to prototype against. Beyond that, LTC micropayments unlock additional requests — ideal for a serverless workload where you pay per invocation anyway. No fixed monthly fee means zero spend when traffic is idle, which is exactly how serverless billing is supposed to feel. The renderer's source is open at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api), so you can audit the conversion logic or self-host if you ever need to pull it back on-platform.
 
 ## The Takeaway
 

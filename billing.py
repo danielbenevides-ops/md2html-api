@@ -20,7 +20,25 @@ import time
 
 USAGE_FILE = "usage.json"
 FREE_TIER_LIMIT = 10
-CRYPTO_WALLET = "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM"  # LTC mainnet
+_DEFAULT_WALLET = "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG"
+_WALLET_PUBLIC_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wallet_public.json")
+
+
+def _load_wallet_address():
+    """Load only the public LTC address; private wallet material is never needed."""
+    address = os.environ.get("LTC_WALLET_ADDRESS", "").strip()
+    if not address:
+        try:
+            with open(_WALLET_PUBLIC_FILE, "r", encoding="utf-8") as wallet_file:
+                address = str(json.load(wallet_file).get("address", "")).strip()
+        except (OSError, ValueError, TypeError):
+            address = ""
+    if not (26 <= len(address) <= 35 and address[:1] in {"L", "M"} and address.isalnum()):
+        address = _DEFAULT_WALLET
+    return address
+
+
+CRYPTO_WALLET = _load_wallet_address()
 
 # Prefix for keys minted by /register. Only registered keys with this prefix
 # are accepted as API keys; other identifiers must be valid client IPs.

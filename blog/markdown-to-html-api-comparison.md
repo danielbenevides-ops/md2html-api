@@ -96,4 +96,4 @@ Use this short rule to pick from the table:
 
 There is no single best **markdown to html api** or library — there's the best fit for your constraints. The MD2HTML API is the option that trades a few milliseconds of network latency for zero install, zero bundle, server-side sanitization, and identical output across every runtime that speaks HTTP. For the growing set of apps that render Markdown in more than one place, that trade is the whole point.
 
-Try it free at <http://147.15.103.217/md2html/>. Source and self-host instructions are at [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api).
+Try it free at <http://147.15.103.217/md2html/>. Source and self-host instructions are at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api).

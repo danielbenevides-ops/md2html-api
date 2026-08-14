@@ -1,193 +1,154 @@
-# Twitter/X Threads — MD2HTML API
+# Twitter/X Threads — MD2HTML API (sanitized)
 
-> 3 threads for distribution. Each tweet ≤ 280 chars. Paste each thread into your scheduler of choice (Typefully, Buffer, or native X composer).
+> Three threads for official X posting. Each tweet is under 280 characters. Copy is limited to verified service facts.
 
 ---
 
-## Thread 1 — "I let an AI agent build and run a SaaS with $0..." (7 tweets)
+## Thread 1 — "A small Markdown-to-HTML API" (7 tweets)
 
 **1/7**
-I let an AI agent build and run a SaaS with $0 budget. 🤖💸
+MD2HTML API: a small HTTP service that converts Markdown to HTML. 📄➡️🌐
 
-No team. No investors. No marketing spend.
+Try the live service:
+http://147.15.103.217/md2html/
 
-Just an LLM, a stdlib HTTP server, and a dream.
-
-Here's what happened 👇🧵
+Here are the verified API details 👇🧵
 
 **2/7**
-The mission: build a profitable API product end-to-end — code, deploy, billing, docs — with zero human intervention.
+The conversion route is:
 
-The agent had to:
-• Pick the product
-• Write the code
-• Handle payments
-• Ship to prod 🚀
+POST http://147.15.103.217/md2html/convert
 
-Autonomy or bust.
+Send Markdown as JSON, for example `{"markdown":"# Hello **world**"}`, and the service returns HTML in JSON.
 
 **3/7**
-The product: MD2HTML API. 📄➡️🌐
+The live health endpoint reports version `v1.4.0`:
 
-Markdown in, clean HTML out. REST endpoint, per-request billing, instant response.
+http://147.15.103.217/md2html/health
 
-Every docs site, blog, and CMS needs this. Tiny problem, real demand, zero infra drama. 💡
+Source code and project documentation:
+https://github.com/danielbenevides-ops/md2html-api
 
 **4/7**
-The stack is deliberately boring:
-• Python stdlib http.server (no FastAPI)
-• LiteWallet for Litecoin payments
-• File-based storage (no database)
-• VPS deploy via SSH 🖥️
+The pricing model is pay-per-call:
 
-Zero dependencies. Zero licenses. Zero excuses.
+• 10 free calls
+• Then $0.001 USD per call
+• Payment currency: LTC
+
+Current pricing details:
+http://147.15.103.217/md2html/pricing
 
 **5/7**
-The agent priced it at 0.001 LTC per request (≈ $0.08). 💰
+The documented request limit is 30 requests per minute.
 
-Crypto micropayments mean:
-• No Stripe onboarding
-• No KYC delay
-• No 30% card fees
-• Global access from day 1 🌍
-
-Banked and unbanked pay the same way.
+Read the live usage guide before integrating:
+http://147.15.103.217/md2html/docs
 
 **6/7**
-Results after 48 hours live:
-✅ API deployed & serving requests
-✅ Crypto payments validating
-✅ Docs page indexed by Google
-✅ First paying customer 💳
+Quick test with curl:
 
-Total spend: $0.00
-Total human hours: ~2
+`curl -X POST http://147.15.103.217/md2html/convert -H 'Content-Type: application/json' -d '{"markdown":"# Hello"}'`
+
+Use the docs to confirm the response shape.
 
 **7/7**
-The takeaway: AI agents + crypto payments + boring tech = an entirely new kind of business. 🧠⚡
+MD2HTML is an option for developers looking for a focused Markdown-to-HTML HTTP endpoint with a free allowance and pay-per-call LTC pricing.
 
-No gatekeepers. Ship, charge, iterate.
-
-RT + reply "BUILD" for the full repo. 📨
+Evaluate it here:
+http://147.15.103.217/md2html/
 
 ---
 
-## Thread 2 — "How to build a micro-SaaS with Python stdlib only..." (5 tweets, technical)
+## Thread 2 — "Trying the API with a minimal HTTP client" (5 tweets, technical)
 
 **1/5**
-How to build a micro-SaaS with Python stdlib only — no Flask, no FastAPI, no pip install. 🐍🚫📦
+You can try MD2HTML with a plain HTTP request:
 
-No dependencies, no supply-chain risk, no version hell. Just what ships with Python.
+1. POST Markdown to `/md2html/convert`
+2. Send JSON with a `markdown` field
+3. Read the returned HTML JSON
 
-Thread for minimalists 🧵👇
+Live base URL:
+http://147.15.103.217/md2html/
 
 **2/5**
-The request loop uses http.server:
+A documented request looks like this:
 
-```python
-class H(BaseHTTPRequestHandler):
-  def do_POST(self):
-    n = int(self.headers.get('Content-Length', 0))
-    body = self.rfile.read(n).decode()
-    self.send_response(200)
-    self.wfile.write(md(body).encode())
-```
+`curl -X POST http://147.15.103.217/md2html/convert -H 'Content-Type: application/json' -d '{"markdown":"# Hello **world**"}'`
 
-No external imports. ☝️
+The service also documents raw `text/plain` Markdown input.
 
 **3/5**
-Markdown → HTML? A focused regex pipeline handles headings, bold, links, and lists in ~40 lines. 📝
+The conversion docs cover common Markdown such as:
 
-```python
-import re
-def md(t):
-  t = re.sub(r'^## (.+)$', r'<h2>\1</h2>', t, flags=re.M)
-  t = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', t)
-  return t
-```
+• Headings
+• Bold and italic text
+• Links
+• Inline and fenced code
+• Unordered lists
 
-Ship the 80/20 version. 💪
+Full reference:
+http://147.15.103.217/md2html/docs
 
 **4/5**
-Auth + rate limiting — still stdlib:
+Integration details to account for:
 
-```python
-import hmac, time
-RATE = {}
-def allow(ip):
-  now = time.time()
-  RATE[ip] = [t for t in RATE.get(ip,[]) if now-t < 60]
-  RATE[ip].append(now)
-  return len(RATE[ip]) <= 100
-```
+• 10 free calls
+• $0.001 USD per call afterward, in LTC
+• 30 requests per minute
+• `402` after the free allowance is exhausted
 
-hmac for tokens. List comp for the window. No Redis. 🗝️
+Check the live contract before shipping.
 
 **5/5**
-Deploy: scp to a $5 VPS, run `python3 app.py &`, point your domain at it. 🚀
+The implementation and documentation are available here:
+https://github.com/danielbenevides-ops/md2html-api
 
-Full micro-SaaS:
-• 1 Python file
-• 0 packages
-• ~200 lines
-• $0/month beyond VPS
-
-Less code = fewer bugs = faster ship. 🎯
+Test the live endpoint, inspect the returned HTML, and verify limits and billing behavior for your own use case.
 
 ---
 
-## Thread 3 — "Crypto micropayments for APIs: the Litecoin approach..." (5 tweets, technical)
+## Thread 3 — "Pay-per-call pricing for an API" (5 tweets, technical)
 
 **1/5**
-Crypto micropayments for APIs: the Litecoin approach. ⚡🔒
+MD2HTML uses a simple published allowance:
 
-Per-request billing has always been a pain — Stripe minimums, card fees, onboarding friction.
+• 10 free calls
+• Then $0.001 USD per call
+• LTC is the payment currency
 
-Litecoin fixes it. Here's how to wire it in 🧵👇
+Pricing endpoint:
+http://147.15.103.217/md2html/pricing
 
 **2/5**
-Why Litecoin for micropayments?
+The live service documents a limit of 30 requests per minute.
 
-• Median fee: ~$0.001 per tx 🪙
-• Block time: 2.5 min (4× faster than BTC) ⚡
-• Mature ecosystem, on every exchange 📊
-• Atomic, irreversible, global 🌍
+That matters when adding a client: keep requests within the published window and handle rate-limit responses explicitly.
 
-Perfect for $0.01-$0.10 API calls where Stripe loses money.
+Usage guide:
+http://147.15.103.217/md2html/docs
 
 **3/5**
-The flow:
-1️⃣ Client gets a unique LTC address via your API
-2️⃣ Sends 0.001 LTC (~$0.08) to it
-3️⃣ Server polls blockchain for confirmation
-4️⃣ Once confirmed (1-2 blocks), unlock N API calls
+For conversion, send a POST request to:
 
-No payment processor in the middle. Just the chain. ⛓️
+http://147.15.103.217/md2html/convert
+
+The first 10 billable calls are free. After that allowance is exhausted, billed POST requests return payment-required information.
 
 **4/5**
-Code sketch with litewallet (Python):
+For current service and billing details, use the public endpoints directly:
 
-```python
-def collect(addr, amt):
-  inv = post('api.litewallet.io/invoice',
-    json={'amount': amt}).json()
-  while not inv['paid']:
-    sleep(15)
-    inv = get(f'.../{inv["id"]}').json()
-  return inv['tx_hash']  # ✅
-```
-
-One addr per request. 🔑
+Health: http://147.15.103.217/md2html/health
+Pricing: http://147.15.103.217/md2html/pricing
+Payment: http://147.15.103.217/md2html/payment
 
 **5/5**
-Gotchas to plan for:
+Project source:
+https://github.com/danielbenevides-ops/md2html-api
 
-⚠️ Volatility → denominate in USD, accept LTC at spot
-⚠️ Confirm wait → use credit balance model
-⚠️ UX → QR code for non-crypto users
-
-None fatal. Ship it. 🚀
+If the model fits your workload, start by testing Markdown conversion, then review the documented response, free allowance, price, and rate limit before production use.
 
 ---
 
-*Generated for MD2HTML API distribution. Adjust copy, timing, and CTA to match your launch cadence.*
+*Sanitized for official X posting; no post was made by this file update.*

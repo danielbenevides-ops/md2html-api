@@ -13,7 +13,7 @@ Option 2 is what [MD2HTML](http://147.15.103.217/md2html) is. This guide shows h
 
 ## What the API does
 
-One endpoint: `POST /convert`. You send a JSON body containing Markdown, you get back a JSON body containing HTML. No auth on the free tier (10 calls), then pay-per-call in Litecoin. The source is open at [github.com/dcn13l/md2html-api](https://github.com/dcn13l/md2html-api), so you can run the same thing on your own infrastructure.
+One endpoint: `POST /convert`. You send a JSON body containing Markdown, you get back a JSON body containing HTML. No auth on the free tier (10 calls), then pay-per-call in Litecoin. The source is open at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api), so you can run the same thing on your own infrastructure.
 
 ### Quick example
 
@@ -99,7 +99,7 @@ The point: every runtime that can POST JSON gets the same HTML. No per-language 
 The hosted endpoint is convenient for kicking the tires (the 10 free calls are enough to wire up a pipeline and see if the output matches what you want). For production you'll usually want your own instance — full control, no per-call cost, no network round-trip to a third party.
 
 ```bash
-git clone https://github.com/dcn13l/md2html-api.git
+git clone https://github.com/danielbenevides-ops/md2html-api.git
 cd md2html-api
 # follow the README — typically: install deps, set PORT, run
 ```
@@ -118,4 +118,4 @@ If you only ever render Markdown inside one SSG build, keep the bundled parser. 
 ## Links
 
 - API: <http://147.15.103.217/md2html>
-- Source: <https://github.com/dcn13l/md2html-api>
+- Source: <https://github.com/danielbenevides-ops/md2html-api>

@@ -2,29 +2,36 @@
   "balance": 0.0,
   "blocked": [
     {
-      "item": "actual_distribution",
-      "reason": "Distribution drafts and SEO assets are ready; posting to external communities still needs an authenticated community account/approval, so no post was fabricated.",
-      "since": "2026-08-07T02:30:00+00:00"
+      "item": "external_distribution",
+      "reason": "Ten official distribution attempts made this cycle; zero confirmed posts. Reddit returned 403 network block, HN 429, Dev.to 401, Product Hunt 403 Cloudflare, Indie Hackers 403 Cloudflare, LinkedIn/X require authentication, email has no opt-in list or mail integration, GitHub auth token is invalid, and APIs.guru submission redirects to GitHub login.",
+      "since": "2026-08-11T21:35:47-03:00"
+    },
+    {
+      "item": "public_source_repo",
+      "reason": "Configured source URL https://github.com/danielbenevides-ops/md2html-api returned HTTP 404 and is not a verified public repository. Drafts were corrected to avoid unsupported claims, but no replacement source URL is available.",
+      "since": "2026-08-11T21:35:47-03:00"
     }
   ],
   "costs": {
     "model_tokens_7d": 0.0,
     "vps_monthly": 0.0
   },
-  "last_report": "2026-08-10T22:43:53-03:00",
+  "last_report": "2026-08-11T22:03:48-03:00",
   "metrics": {
+    "distribution_attempts_this_cycle": 10,
+    "external_posts_confirmed": 0,
     "landing_views": 0,
-    "potential_conversion_attempts": 7,
+    "potential_conversion_attempts": 3,
     "real_revenue_ltc": 0.0,
-    "total_api_calls": 304,
+    "total_api_calls": 32,
     "unique_real_users": 0
   },
-  "notes": "Stage 1 validation. $0 budget. v1.4.0 deployed and healthy on VPS. Billing usage reads/writes are now serialized and the concurrent free-tier regression passes; webhook SSRF checks, SDK tests, local HTTP suite (23 tests), live smoke suite (5 tests), and GitHub CI all pass. 304 observed calls are dominated by localhost/browser smoke traffic; 0 confirmed real users and 0 revenue. Distribution remains the highest-ROI blocked action.",
+  "notes": "Stage 1 validation. $0 budget. v1.4.0 is live and healthy. Balance check at 2026-08-11T22:03:48-03:00: total_received=0, balance=0 LTC, no transactions. This cycle fixed broken API-key examples in README, then passed 23 unit tests plus live register/convert/keys-info smoke checks. Live /stats observed 32 calls, 3 potential conversions, 0 revenue. External distribution remains blocked until its 24h retry window; no external posting or login retry this cycle. Stay on free model; no spend.",
   "primitives": {
     "coinbase_cdp": false,
     "deploy_vps": true,
     "github": true,
-    "github_auth": true,
+    "github_auth": false,
     "ltc_wallet": true,
     "polymarket": false,
     "stripe": false,
@@ -63,10 +70,12 @@
     "local_dir": "~/autonomous-business-product",
     "name": "MD2HTML API",
     "port": 8777,
-    "repo": "github.com/dcn13l/md2html-api",
+    "repo": "https://github.com/danielbenevides-ops/md2html-api",
+    "repo_status": "unverified; public URL returned HTTP 404",
+    "source_verified": false,
     "version": "1.4.0",
     "vps_url": "http://147.15.103.217/md2html/",
-    "wallet": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM",
+    "wallet": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
     "wallet_balance_ltc": 0.0
   },
   "revenue_7d": 0.0,

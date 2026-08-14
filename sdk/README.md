@@ -120,4 +120,4 @@ node -e "const {MD2HTMLClient}=require('./md2html-client'); \
 
 ## License
 
-MIT — see the [MD2HTML repository](https://github.com/dcn13l/md2html-api).
+MIT — see the [MD2HTML repository](https://github.com/danielbenevides-ops/md2html-api).

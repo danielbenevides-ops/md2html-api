@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="canonical" href="http://147.15.103.217/md2html/">
+<meta name="robots" content="index,follow">
+<link rel="alternate" type="application/json" href="http://147.15.103.217/md2html/swagger.json" title="OpenAPI 3.0 specification">
 
 <!-- Primary Meta Tags -->
 <title>MD2HTML API — Convert Markdown to HTML via API</title>
@@ -14,7 +17,6 @@
 <meta property="og:url" content="http://147.15.103.217/md2html/">
 <meta property="og:title" content="MD2HTML API — Convert Markdown to HTML via API">
 <meta property="og:description" content="A simple, fast API that converts Markdown to clean HTML. Pay-per-call with Litecoin. Free tier of 10 calls included — no subscriptions, no cards.">
-<meta property="og:image" content="">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MD2HTML API — Convert Markdown to HTML via API">
 <meta name="twitter:description" content="A simple, fast API that converts Markdown to clean HTML. Pay-per-call with Litecoin. Free tier of 10 calls included.">
@@ -212,7 +214,7 @@
   }
   .faq summary::-webkit-details-marker { display: none; }
   .faq summary::after { content: "+"; font-size: 1.3rem; color: var(--muted); transition: transform 0.2s; }
-  .faq li[open] summary::after { transform: rotate(45deg); }
+  .faq li details[open] summary::after { transform: rotate(45deg); }
   .faq .ans { padding: 0 1.15rem 1rem 1.15rem; color: var(--muted); font-size: 0.92rem; line-height: 1.6; }
 
   /* --- Why use --- */
@@ -229,8 +231,10 @@
 <body>
   <div class="wrap">
     <span class="badge">API · 10 free calls, then LTC</span>
-    <h1><span class="accent">MD2HTML</span> API</h1>
+    <main id="main-content" aria-labelledby="page-title">
+    <h1 id="page-title"><span class="accent">MD2HTML</span> API</h1>
     <p class="tagline">Convert Markdown to HTML via API. <em>Simple. Fast. Crypto-micropay.</em></p>
+    <p class="hint"><strong>Developer docs:</strong> <a href="http://147.15.103.217/md2html/docs" style="color:var(--accent)">API usage guide</a> &nbsp;·&nbsp; <a href="http://147.15.103.217/md2html/swagger.json" style="color:var(--accent)">OpenAPI 3.0 specification</a></p>
 
     <section>
       <h2>Live Demo</h2>
@@ -248,12 +252,12 @@
 Type here, then hit Convert.</textarea>
           <div class="row">
             <button type="button" id="convertBtn">Convert</button>
-            <div class="status" id="demoStatus">Ready.</div>
+            <div class="status" id="demoStatus" role="status" aria-live="polite">Ready.</div>
           </div>
         </div>
         <div class="pane">
           <label for="htmlOutput">HTML Output</label>
-          <div class="output" id="htmlOutput" aria-label="Rendered HTML output"></div>
+          <div class="output" id="htmlOutput" role="region" aria-live="polite" aria-label="Rendered HTML output"></div>
         </div>
       </div>
       <p class="hint">Conversion hits <code class="path">POST http://147.15.103.217/md2html/convert</code> in real time. First 10 calls are free.</p>
@@ -263,24 +267,24 @@ Type here, then hit Convert.</textarea>
       <h2>Why MD2HTML?</h2>
       <div class="cards">
         <div class="card">
-          <span class="ico">📦</span>
+          <span class="ico" aria-hidden="true">📦</span>
           <h3>No Dependencies</h3>
           <p>Pure REST + JSON. Drop one <code class="path">fetch()</code> into your code — no SDK to install, no build step, no runtime bloat. Anywhere HTTP runs, MD2HTML runs.</p>
         </div>
         <div class="card">
-          <span class="ico">🪙</span>
+          <span class="ico" aria-hidden="true">🪙</span>
           <h3>Micropayments</h3>
           <p>$0.001 per call, billed in Litecoin. No subscriptions, no credit cards, no lock-in. Top up your on-chain balance once and ship — no middleman taking a cut.</p>
         </div>
         <div class="card">
-          <span class="ico">🔓</span>
+          <span class="ico" aria-hidden="true">🔓</span>
           <h3>Open Source</h3>
-          <p>Full source on <a href="https://github.com/dcn13l/md2html-api" style="color:var(--accent)">GitHub</a>. Read the code, file issues, send PRs, or fork it. No black box — you always know what's running.</p>
+          <p>Full source on <a href="https://github.com/danielbenevides-ops/md2html-api" style="color:var(--accent)">GitHub</a>. Read the code, file issues, send PRs, or fork it. No black box — you always know what's running.</p>
         </div>
         <div class="card">
-          <span class="ico">⚡</span>
+          <span class="ico" aria-hidden="true">⚡</span>
           <h3>Dead Simple</h3>
-          <p>One endpoint, one JSON body. <code class="path">{"markdown": "..."}</code> in, <code class="path">{"html": "..."}</code> out. No auth keys, no setup wizard, no learning curve. You're converted in 10 seconds.</p>
+          <p>One JSON body for conversion. <code class="path">{"markdown": "..."}</code> in, <code class="path">{"html": "..."}</code> out. No auth keys, no setup wizard, no learning curve. You're converted in 10 seconds.</p>
         </div>
       </div>
     </section>
@@ -313,28 +317,31 @@ Type here, then hit Convert.</textarea>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/docs</code></h3>
-        <p>Interactive API documentation (auto-generated). Explore all endpoints in your browser.</p>
+        <p>Plain-text API usage guide with request and response examples for the live v1.4.0 service. <a href="http://147.15.103.217/md2html/docs" style="color:var(--accent)">Read the API docs</a>.</p>
 <pre><span class="cmt"># open in a browser</span>
 <span class="str">http://147.15.103.217/md2html/docs</span></pre>
       </div>
       <div class="endpoint">
-        <h3><span class="method post">POST</span><code>/payment</code></h3>
-        <p>Top up your API quota by reporting an LTC transaction. Body: <code>{"txid": "...", "amount": 0.01}</code>.</p>
-<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">http://147.15.103.217/md2html/payment</span> <span class="str">\\</span>
-  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\\</span>
-  <span class="flag">-d</span> <span class="str">'{"txid":"abc123","amount":0.05}'</span></pre>
+        <h3><span class="method get">GET</span><code>/payment</code></h3>
+        <p>Returns the Litecoin wallet address and payment instructions for continuing after the free tier.</p>
+<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/payment</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/usage</code></h3>
         <p>Current month's call count and remaining free quota. Returns balance JSON.</p>
 <pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/usage</span>
-<span class="cmt"># {"calls":24,"free_remaining":0,"credits":0.05}</span></pre>
+<span class="cmt"># {"calls_made":7,"free_tier_limit":10,"remaining":3}</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/stats</code></h3>
-        <p>Aggregate service metrics: total calls, revenue (LTC), and uptime. Public, read-only.</p>
+        <p>Aggregate service metrics: total calls, unique clients, per-endpoint and status counts, potential conversions, and average latency. Public, read-only.</p>
 <pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/stats</span>
-<span class="cmt"># {"total_calls":12340,"revenue":1.23,"uptime_rate":0.999}</span></pre>
+<span class="cmt"># {"total_calls":12340,"unique_ips":42,"calls_by_endpoint":{}}</span></pre>
+      </div>
+      <div class="endpoint">
+        <h3><span class="method get">GET</span><code>/swagger.json</code></h3>
+        <p>Machine-readable OpenAPI 3.0 specification for integrating the live API. <a href="http://147.15.103.217/md2html/swagger.json" style="color:var(--accent)">View the OpenAPI spec</a>.</p>
+<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/swagger.json</span></pre>
       </div>
     </section>
 
@@ -343,7 +350,7 @@ Type here, then hit Convert.</textarea>
       <div class="ratelimit">
         <strong>30 requests/min</strong> per client &middot; <strong>10 free calls</strong> then top-up with LTC.
         Over the limit returns <code>429</code>. Free tier resets 10 credits at first run, after which calls
-        require a positive LTC balance posted via <code>/payment</code>.
+        require a positive LTC balance after sending LTC to the wallet returned by <code>GET /payment</code>.
       </div>
     </section>
 
@@ -357,7 +364,7 @@ Type here, then hit Convert.</textarea>
       <h2>Pay with Litecoin</h2>
       <div class="ltc-box">
         <label>LTC Wallet Address — tap to select</label>
-        <div class="addr" id="ltcAddr">Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM</div>
+        <div class="addr" id="ltcAddr">Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG</div>
       </div>
       <p class="hint">Send any amount of LTC; fund balance is applied per call. Direct on-chain, no middleman.</p>
     </section>
@@ -375,28 +382,37 @@ Type here, then hit Convert.</textarea>
       <h2>FAQ</h2>
       <ul class="faq">
         <li>
-          <summary>Is it free?</summary>
-          <div class="ans">Yes — the first <strong>10 calls are free</strong>, no payment required. After that, it's <strong>$0.001 per call</strong>, billed in Litecoin. No subscription, no credit card, ever.</div>
+          <details>
+            <summary>Is it free?</summary>
+            <div class="ans">Yes — the first <strong>10 calls are free</strong>, no payment required. After that, it's <strong>$0.001 per call</strong>, billed in Litecoin. No subscription, no credit card, ever.</div>
+          </details>
         </li>
         <li>
-          <summary>Do I need an account?</summary>
-          <div class="ans">No. There's no auth, no signup, and no API keys. <code class="path">POST /md2html/convert</code> works directly from your browser, CLI, or server — just send JSON and get HTML back.</div>
+          <details>
+            <summary>Do I need an account?</summary>
+            <div class="ans">No. There's no auth, no signup, and no API keys. <code class="path">POST /md2html/convert</code> works directly from your browser, CLI, or server — just send JSON and get HTML back.</div>
+          </details>
         </li>
         <li>
-          <summary>What about rate limits?</summary>
-          <div class="ans">Clients are capped at <strong>30 requests/minute</strong>. Exceeding it returns HTTP <code>429</code>. Free tier resets 10 credits at first run; beyond that, calls require a positive LTC balance posted via <code>/payment</code>.</div>
+          <details>
+            <summary>What about rate limits?</summary>
+            <div class="ans">Clients are capped at <strong>30 requests/minute</strong>. Exceeding it returns HTTP <code>429</code>. Free tier resets 10 credits at first run; beyond that, calls require a positive LTC balance after sending LTC to the wallet returned by <code>GET /payment</code>.</div>
+          </details>
         </li>
         <li>
-          <summary>Can I self-host?</summary>
-          <div class="ans">Yes — MD2HTML is open source at <a href="https://github.com/dcn13l/md2html-api" style="color:var(--accent)">github.com/dcn13l/md2html-api</a>. Clone the repo, run the server, and point your requests at your own instance. Full source, no black box.</div>
+          <details>
+            <summary>Can I self-host?</summary>
+            <div class="ans">Yes — MD2HTML is open source at <a href="https://github.com/danielbenevides-ops/md2html-api" style="color:var(--accent)">github.com/danielbenevides-ops/md2html-api</a>. Clone the repo, run the server, and point your requests at your own instance. Full source, no black box.</div>
+          </details>
         </li>
       </ul>
     </section>
 
+    </main>
     <footer>
       <p>MD2HTML API &mdash; convert Markdown to HTML via API. Built open, priced in micro-Litecoin.</p>
       <p style="margin-top:0.5rem">
-        <a href="https://github.com/dcn13l/md2html-api" style="color:var(--accent)">GitHub → github.com/dcn13l/md2html-api</a>
+        <a href="https://github.com/danielbenevides-ops/md2html-api" style="color:var(--accent)">GitHub → github.com/danielbenevides-ops/md2html-api</a>
         &nbsp;·&nbsp; Endpoints: <code>/convert</code> <code>/health</code> <code>/docs</code> <code>/payment</code> <code>/usage</code> <code>/stats</code>
         &nbsp;·&nbsp; <span style="color:var(--accent)">&copy; 2026 MD2HTML API</span>
       </p>

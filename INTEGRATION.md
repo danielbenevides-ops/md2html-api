@@ -2,7 +2,7 @@
 
 **Base URL:** `http://147.15.103.217/md2html/`
 **Currency:** Litecoin (LTC)
-**Wallet:** `Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM`
+**Wallet:** `Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG`
 **Free tier:** 10 calls per IP, then HTTP `402 Payment Required`.
 
 ---
@@ -98,7 +98,7 @@ print(r.json())
 # --- Get payment address (when you hit 402) ---
 r = requests.get(f"{BASE}/payment")
 print(r.json())
-# {'wallet_address': 'Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM', 'currency': 'LTC', ...}
+# {'wallet_address': 'Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG', 'currency': 'LTC', ...}
 
 # --- Robust call with 402 handling ---
 def call(endpoint, **kwargs):
@@ -135,7 +135,7 @@ console.log(usage);
 // --- Get payment address ---
 const pay = await (await fetch(`${BASE}/payment`)).json();
 console.log(pay);
-// { wallet_address: 'Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM', currency: 'LTC', ... }
+// { wallet_address: 'Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG', currency: 'LTC', ... }
 
 // --- Robust call with 402 handling ---
 async function call(endpoint, payload) {
@@ -403,7 +403,7 @@ console.log(await r.json());
 **Response:**
 ```json
 {
-  "wallet_address": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM",
+  "wallet_address": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
   "currency": "LTC",
   "message": "Send any amount of Litecoin to this address to continue usage."
 }
@@ -491,10 +491,10 @@ console.log(await r.json());
 
 1. **Check usage** → `GET /usage` to see remaining calls.
 2. **Get wallet** → `GET /payment` returns the LTC address:
-   `Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM`
+   `Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG`
 3. **Send LTC** from any wallet (any amount — honor system). Save your **txid**.
 4. **Send txid to operator** (out-of-band: email/DM). Operator verifies on
-   `https://chain.so/address/Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM`, then runs
+   `https://chain.so/address/Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG`, then runs
    `reset_usage(<your IP>)` to clear your counter.
 5. **Call again.** Counter resets; you get another free-tier block.
 
@@ -509,7 +509,7 @@ After 10 billed calls, the server returns `HTTP 402 Payment Required` with:
 {
   "status": 402,
   "error": "Free tier limit reached",
-  "wallet_address": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM",
+  "wallet_address": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
   "currency": "LTC"
 }
 ```
@@ -528,7 +528,7 @@ if r.status_code == 402:
 `server.py` reads `wallet.json` (same dir), falls back to hardcoded constant:
 ```python
 WALLET_ADDRESS = json.load(open(_WALLET_FILE)).get("address",
-    "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM"
+    "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG"
 ```
 Override via env: `PAYMENT_WALLET`.
 
@@ -556,7 +556,7 @@ curl localhost:8777/convert -d '## x'                  # 402 + wallet
 ```
 
 ## Changelog
-- Server uses **LTC** (Litecoin). Wallet: `Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM`.
+- Server uses **LTC** (Litecoin). Wallet: `Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG`.
 - 9 endpoints live: `/health`, `/convert`, `/json/prettify`, `/text/stats`,
   `/slug`, `/docs`, `/payment`, `/usage`, `/stats`.
 - Free tier: **10 calls/IP** on billed endpoints; then `402`.

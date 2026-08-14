@@ -167,7 +167,7 @@ curl "$BASE_URL/register"
 ```json
 {
   "api_key": "mk_2ddf91574347ae032bea14f0b313555a",
-  "wallet_address": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM",
+  "wallet_address": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
   "free_tier_limit": 10,
   "calls_made": 0,
   "remaining": 10
@@ -285,7 +285,7 @@ curl -X POST "$BASE_URL/batch" \
   "message": "Free tier limit exceeded at item 2 of 4. Send payment to continue.",
   "partial_results": ["<h1>First</h1>", "<h1>Second</h1>"],
   "billing": {"status": 402, "calls_made": 11, "free_tier_limit": 10},
-  "wallet_address": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM"
+  "wallet_address": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG"
 }
 ```
 
@@ -658,7 +658,7 @@ curl "$BASE_URL/pricing"
   "paid_tier": {
     "price_per_call": "0.001 USD",
     "currency": "LTC",
-    "wallet_address": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM",
+    "wallet_address": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
     "note": "Send Litecoin to the wallet to continue after the free tier."
   },
   "rate_limit": {"max": 30, "window_seconds": 60},
@@ -688,7 +688,7 @@ curl "$BASE_URL/payment"
 
 ```json
 {
-  "wallet_address": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM",
+  "wallet_address": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
   "currency": "LTC",
   "message": "Send any amount of Litecoin to this address to continue using the API after the free tier."
 }
@@ -777,7 +777,7 @@ After a client makes its tenth billable call, the next billable request returns 
   "status": 402,
   "error": "Payment Required",
   "message": "Free tier limit (10 calls) exceeded. You made 11 calls. Send payment to continue.",
-  "wallet_address": "Las7JLihEnYvACUt4jgxqcFcsFZrD3RgVM",
+  "wallet_address": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
   "calls_made": 11,
   "free_tier_limit": 10
 }
