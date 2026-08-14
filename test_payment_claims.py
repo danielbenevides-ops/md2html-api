@@ -63,3 +63,37 @@ class PaymentClaimVerificationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+class BlockchairFallbackTests(unittest.TestCase):
+    def test_fallback_sums_outputs_to_wallet(self):
+        txid = "a" * 64
+        wallet = "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG"
+        data = {"data": {txid: {"confirmations": 2, "outputs": [
+            {"recipient": wallet, "value": 100000},
+            {"recipient": "Lother", "value": 50000},
+        ]}}}
+        with patch("payment_claims.urllib.request.urlopen", return_value=_Response(data)):
+            verified = payment_claims._verify_via_blockchair(txid, wallet)
+        self.assertEqual(verified["value_satoshis"], 100000)
+        self.assertEqual(verified["confirmations"], 2)
+
+    def test_fallback_raises_404_when_unknown(self):
+        txid = "b" * 64
+        data = {"data": {}}
+        with patch("payment_claims.urllib.request.urlopen", return_value=_Response(data)):
+            with self.assertRaises(payment_claims.VerificationError) as raised:
+                payment_claims._verify_via_blockchair(txid, "Lwallet")
+        self.assertEqual(raised.exception.status, 404)
+
+    def test_blockcypher_404_falls_back(self):
+        txid = "c" * 64
+        wallet = "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG"
+        blockchair = {"data": {txid: {"confirmations": 1, "outputs": [
+            {"recipient": wallet, "value": 100000}]}}}
+        error = urllib.error.HTTPError("url", 404, "nf", {}, io.BytesIO(b"x"))
+        def side_effect(req, timeout=0):
+            if "blockcypher" in getattr(req, "full_url", ""):
+                raise error
+            return _Response(blockchair)
+        with patch("payment_claims.urllib.request.urlopen", side_effect=side_effect):
+            verified = payment_claims.verify_ltc_transaction(txid, wallet)
+        self.assertEqual(verified["value_satoshis"], 100000)

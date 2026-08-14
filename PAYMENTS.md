@@ -1,4 +1,8 @@
-# Payments: Free Crypto Micro-Payment Setup
+# Webhook security
+
+- Callbacks must use `https://`; `http://` URLs are rejected unless `WEBHOOK_REQUIRE_HTTPS` is disabled.
+- When `MD2HTML_WEBHOOK_SECRET` is set, every callback carries `X-MD2HTML-Signature` (HMAC-SHA256 of body + timestamp) and `X-MD2HTML-Timestamp` so receivers can verify authenticity.
+- Callback hosts are resolved and pinned; only public addresses are accepted (no localhost/private/link-local).
 
 This document explains how the autonomous-business-product receives
 micro-payments with **NO KYC, NO paid service, NO third-party custody**.

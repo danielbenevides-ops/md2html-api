@@ -1,0 +1,17 @@
+# Normalize line endings: store as LF, checkout with platform-native EOL.
+* text=auto
+
+# Python/JS/CI/config files stay LF everywhere for clean diffs and runs.
+*.py text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+
+# Binary assets, if any, are never text.
+*.png binary
+*.jpg binary
+*.ico binary

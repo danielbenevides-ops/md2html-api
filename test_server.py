@@ -82,6 +82,7 @@ class MD2HTMLAPITest(unittest.TestCase):
         billing.USAGE_FILE = os.path.join(self.temp_dir.name, "usage.json")
         analytics.LOG_FILE = os.path.join(self.temp_dir.name, "analytics.json")
         server._rate_map.clear()
+        server._register_map.clear()
 
         self.httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
         self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
@@ -93,6 +94,7 @@ class MD2HTMLAPITest(unittest.TestCase):
         self.httpd.server_close()
         self.thread.join(timeout=5)
         server._rate_map.clear()
+        server._register_map.clear()
         billing.USAGE_FILE = self.old_usage_file
         analytics.LOG_FILE = self.old_log_file
         os.chdir(self.old_cwd)
@@ -515,6 +517,31 @@ class MD2HTMLAPITest(unittest.TestCase):
         self.assertEqual(body["billing"]["status"], 402)
         self.assertEqual(body["billing"]["calls_made"], billing.FREE_TIER_LIMIT + 1)
         self.assertTrue(body["wallet_address"])
+
+
+    def test_register_rate_limit_blocks_excess_keys(self):
+        # Reset the register limiter so the test is deterministic.
+        server._register_map.clear()
+        successes = 0
+        for _ in range(server.REGISTER_LIMIT_MAX):
+            status, body, _ = request(self.api, "/register")
+            if status == 200:
+                successes += 1
+        self.assertEqual(successes, server.REGISTER_LIMIT_MAX)
+        status, body, _ = request(self.api, "/register")
+        self.assertEqual(status, 429)
+        self.assertEqual(body.get("error"), "Registration rate limit exceeded")
+
+    def test_webhook_registration_requires_https(self):
+        key = "mk_" + "0" * 32
+        # Register the key in usage so it is a managed key.
+        billing._save_usage({key: {"call_count": 0, "kind": "api_key",
+                                    "purchased_calls": 0, "payment_claims": []}})
+        status, body, _ = request(self.api, "/webhook/register", method="POST",
+                                  payload={"callback_url": "http://example.com/hook"},
+                                  headers=auth(key))
+        self.assertEqual(status, 400)
+        self.assertIn("https", body.get("message", "").lower())
 
 
 if __name__ == "__main__":

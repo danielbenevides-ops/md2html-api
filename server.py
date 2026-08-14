@@ -24,6 +24,15 @@ VERSION = "1.5.0"  # added verified LTC payment claims and prepaid credits
 MAX_BODY = 1024 * 1024  # 1MB body cap (anti-OOM)
 RATE_LIMIT_WINDOW = 60  # seconds
 RATE_LIMIT_MAX = 30  # max requests per IP per window
+REGISTER_LIMIT_WINDOW = 600  # seconds (10 minutes)
+REGISTER_LIMIT_MAX = 5  # max new API keys minted per IP per window
+WEBHOOK_REQUIRE_HTTPS = True  # reject insecure http:// webhook callbacks
+WEBHOOK_SIGNING_SECRET = os.environ.get("MD2HTML_WEBHOOK_SECRET", "").strip()
+
+
+def _webhook_requires_https():
+    """Hookable gate so tests can exercise http:// callbacks locally."""
+    return WEBHOOK_REQUIRE_HTTPS
 BATCH_MAX_ITEMS = 50  # max items per /batch request
 _STARTED_AT = time.time()  # server startup timestamp for /health uptime
 
@@ -58,6 +67,21 @@ WALLET_ADDRESS = CRYPTO_WALLET
 # --- Rate limiter (thread-safe, in-memory) ---
 _rate_lock = threading.Lock()
 _rate_map = {}  # {ip: [(timestamp, ...)]}
+_register_lock = threading.Lock()
+_register_map = {}  # {ip: [(timestamp, ...)]}
+
+def register_rate_check(ip):
+    """Limit how many fresh API keys one IP can mint per window (anti-abuse)."""
+    now = time.time()
+    with _register_lock:
+        reqs = _register_map.get(ip, [])
+        reqs = [t for t in reqs if now - t < REGISTER_LIMIT_WINDOW]
+        if len(reqs) >= REGISTER_LIMIT_MAX:
+            _register_map[ip] = reqs
+            return False
+        reqs.append(now)
+        _register_map[ip] = reqs
+    return True
 
 # --- Webhook registrations (thread-safe, in-memory) -----------------------
 _WEBHOOK_LOCK = threading.Lock()
@@ -94,6 +118,8 @@ def _validate_webhook_url(callback_url):
     if (not callback_url or len(callback_url) > WEBHOOK_MAX_URL or
             parsed.scheme not in ("http", "https") or not parsed.netloc):
         raise ValueError("callback URL must be a valid http:// or https:// URL")
+    if _webhook_requires_https() and parsed.scheme != "https":
+        raise ValueError("callback URL must use https://")
     if parsed.username or parsed.password:
         raise ValueError("callback URL must not contain embedded credentials")
     try:
@@ -181,17 +207,24 @@ def _get_webhook(client_id):
 
 
 def _post_webhook(callback_url, payload):
-    """POST a JSON webhook payload, returning delivery status without raising."""
+    """POST a JSON webhook payload (with HMAC signature when configured), returning status."""
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "MD2HTML-Webhook/1.0",
+    }
+    if WEBHOOK_SIGNING_SECRET:
+        import hmac as _hmac, hashlib as _hashlib
+        ts = str(int(time.time()))
+        sig = _hmac.new(WEBHOOK_SIGNING_SECRET.encode(), body + ts.encode(), _hashlib.sha256).hexdigest()
+        headers["X-MD2HTML-Signature"] = "sha256=" + sig
+        headers["X-MD2HTML-Timestamp"] = ts
     request = urllib.request.Request(
         callback_url,
         data=body,
         method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "User-Agent": "MD2HTML-Webhook/1.0",
-        },
+        headers=headers,
     )
     try:
         # Resolve once, reject private answers, and pin the TCP destination so
@@ -1779,6 +1812,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif self.path == "/register":
                 # Mint a new API key, keyed independently of the caller's IP so
                 # NAT/proxy users get their own free-tier bucket.
+                if not register_rate_check(client_ip):
+                    self.send(429, json.dumps({
+                        "error": "Registration rate limit exceeded",
+                        "message": "Too many API keys requested from this address. Try again later.",
+                        "retry_after": REGISTER_LIMIT_WINDOW,
+                    }))
+                    log_call("/register", client_ip, 429, time.time() - t0)
+                    return
                 reg = register_client(ip=client_ip)
                 self.send(200, json.dumps(reg))
                 log_call("/register", client_ip, 200, time.time() - t0)
@@ -2041,6 +2082,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
             # ---- /register: mint an API key from signup JSON ---------------
             if path == "/register":
+                if not register_rate_check(client_ip):
+                    self.send(429, json.dumps({
+                        "error": "Registration rate limit exceeded",
+                        "message": "Too many API keys requested from this address. Try again later.",
+                        "retry_after": REGISTER_LIMIT_WINDOW,
+                    }))
+                    log_call(path, client_ip, 429, time.time() - t0)
+                    return
                 raw, status, err = self._read_body()
                 if raw is None:
                     self.send(status, err)
