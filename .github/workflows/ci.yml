@@ -8,8 +8,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: "pip"                 # auto-caches pip downloads
@@ -18,4 +18,6 @@ jobs:
       - name: Run tests
         env:
           MD2HTML_BASE_URL: ${{ vars.MD2HTML_BASE_URL || 'http://147.15.103.217/md2html/' }}
-        run: python -m unittest test_suite -v
+        run: python -m unittest discover -v
+      - name: Validate Node SDK syntax
+        run: node --check sdk/md2html-client.js
