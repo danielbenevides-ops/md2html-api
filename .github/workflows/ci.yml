@@ -17,7 +17,7 @@ jobs:
       - run: pip install requests
       - name: Run tests
         env:
-          MD2HTML_BASE_URL: ${{ vars.MD2HTML_BASE_URL || 'http://147.15.103.217/md2html/' }}
+          MD2HTML_BASE_URL: ${{ vars.MD2HTML_BASE_URL || 'https://147.15.103.217.sslip.io/md2html/' }}
         run: python -m unittest discover -v
       - name: Validate Node SDK syntax
         run: node --check sdk/md2html-client.js
