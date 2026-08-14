@@ -1,7 +1,7 @@
 """Analytics tracking for autonomous-business API usage. Stdlib only."""
 import json, os
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timezone
 
 LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "analytics.json")
 
@@ -9,7 +9,7 @@ LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "analytics.j
 def log_call(endpoint, client_ip, status, latency, timestamp=None):
     """Append a single API-call record to analytics.json."""
     entry = {
-        "timestamp": timestamp or datetime.utcnow().isoformat() + "Z",
+        "timestamp": timestamp or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "endpoint": endpoint,
         "client_ip": client_ip,
         "status": status,

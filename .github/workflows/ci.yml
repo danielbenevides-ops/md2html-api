@@ -15,9 +15,7 @@ jobs:
           cache: "pip"                 # auto-caches pip downloads
       - run: pip install -r requirements.txt
       - run: pip install requests
-      - name: Run tests
-        env:
-          MD2HTML_BASE_URL: ${{ vars.MD2HTML_BASE_URL || 'https://147.15.103.217.sslip.io/md2html/' }}
-        run: python -m unittest discover -v
+      - name: Run deterministic tests
+        run: python -m unittest test_payment_claims test_server test_webhooks -v
       - name: Validate Node SDK syntax
         run: node --check sdk/md2html-client.js
