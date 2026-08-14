@@ -3,8 +3,8 @@
 A tiny, zero-dependency **Node.js SDK** for the [MD2HTML API](http://147.15.103.217/md2html/) — a Markdown-to-HTML micropayment service that bills per call in Litecoin.
 
 - ✨ **Zero dependencies** — uses the global `fetch` built into Node.js 18+
-- 🧩 **All 10 endpoints** wrapped in one `MD2HTMLClient` class
-- 💰 Micropayment billing: 10 free calls, then **$0.001 / call** paid in LTC
+- 🧩 Conversion, utility, usage, payment, and claim methods in one `MD2HTMLClient`
+- 💰 Billing: 10 free calls, then **0.001 LTC / 100 prepaid calls**
 - 🔑 Optional API key + `X-API-Key` header (falls back to IP-based billing)
 - ⏱️ Built-in request timeout via `AbortController`
 - 📦 CommonJS + ESM dual export
@@ -55,7 +55,11 @@ console.log(html);
 
 // Mint a fresh API key + LTC wallet in one call
 const key = await client.register();
-console.log(key.api_key, key.wallet_address, key.remaining);
+client.apiKey = key.api_key;
+console.log(key.wallet_address, key.remaining);
+
+// After sending a package and waiting for one confirmation:
+// const claim = await client.claimPayment('<64-hex-litecoin-txid>');
 ```
 
 ## API reference
@@ -73,6 +77,7 @@ status they reject with an `Error` exposing `.status`, `.url`, and `.body`.
 | `health()`         | `GET /health`       | Liveness probe (uptime, version). No auth.             |
 | `docs()`           | `GET /docs`         | Interactive API documentation.                        |
 | `payment()`        | `GET /payment`      | LTC wallet address for topping up quota.               |
+| `claimPayment(txid)` | `POST /payment/claim` | Verify a confirmed txid and add prepaid calls.       |
 | `usage(opts?)`     | `GET /usage`        | Quota used / remaining (by API key or IP).             |
 | `stats()`           | `GET /stats`        | Public aggregate service metrics.                      |
 
@@ -89,9 +94,8 @@ await client.convert('# x', { apiKey: 'mk_other_key' });
 ## Billing & rate limits
 
 - **Free tier**: 10 free calls per client (IP or API key) across all POST endpoints.
-- **Paid calls**: `$0.001` / call, billed in Litecoin. After the free tier you
-  receive `402 Payment Required` with the server's LTC wallet address; top up
-  via `POST /payment` reporting your transaction.
+- **Prepaid calls**: 0.001 LTC credits 100 calls. After one confirmation, call
+  `claimPayment(txid)` using a managed API key. A txid is globally single-use.
 - **Rate limit**: 30 requests / minute / IP.
 - **Max body**: 1 MB (`/convert` caps Markdown input at 50 KB).
 
@@ -107,7 +111,7 @@ Run the bundled smoke test against the live API:
 ```bash
 npm test
 # health ok: {"status":"ok","uptime_seconds":...}
-# convert ok, html head: <h1>Hi <strong>world</strong></h1>
+# payment metadata ok
 ```
 
 Or inline:

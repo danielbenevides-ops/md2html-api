@@ -23,7 +23,7 @@ MD2HTML API is a Markdown-to-HTML conversion API built entirely by an autonomous
 
 ## Pricing
 - 10 free calls
-- $0.001/call via Litecoin (no Stripe/KYC/accounts)
+- 0.001 LTC per 100 calls via Litecoin (no Stripe/KYC/accounts)
 - Direct on-chain payments
 
 ## Team

@@ -10,16 +10,16 @@
 <!-- Primary Meta Tags -->
 <title>MD2HTML API — Convert Markdown to HTML via API</title>
 <meta name="title" content="MD2HTML API — Convert Markdown to HTML via API">
-<meta name="description" content="MD2HTML is a simple, fast API that converts Markdown to clean HTML. Pay-per-call with Litecoin micropayments — no subscriptions, no cards. Free tier of 10 calls included.">
+<meta name="description" content="MD2HTML is a simple, fast API that converts Markdown to clean HTML. 10 free calls, then fixed prepaid packages of 100 calls for 0.001 LTC — no subscriptions or cards.">
 
 <!-- Open Graph / Social -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="http://147.15.103.217/md2html/">
 <meta property="og:title" content="MD2HTML API — Convert Markdown to HTML via API">
-<meta property="og:description" content="A simple, fast API that converts Markdown to clean HTML. Pay-per-call with Litecoin. Free tier of 10 calls included — no subscriptions, no cards.">
+<meta property="og:description" content="A simple, fast API that converts Markdown to clean HTML. 10 free calls, then 100-call Litecoin packages — no subscriptions or cards.">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MD2HTML API — Convert Markdown to HTML via API">
-<meta name="twitter:description" content="A simple, fast API that converts Markdown to clean HTML. Pay-per-call with Litecoin. Free tier of 10 calls included.">
+<meta name="twitter:description" content="A simple, fast API that converts Markdown to clean HTML. 10 free calls, then fixed 100-call Litecoin packages.">
 
 <!-- JSON-LD Structured Data -->
 <script type="application/ld+json">
@@ -28,19 +28,15 @@
   "@type": "WebApplication",
   "name": "MD2HTML API",
   "url": "http://147.15.103.217/md2html/",
-  "description": "Convert Markdown to HTML via API. Pay-per-call with Litecoin micropayments — no subscriptions, no cards. Free tier of 10 calls included.",
+  "description": "Convert Markdown to HTML via API. 10 free calls, then fixed prepaid packages of 100 calls for 0.001 LTC — no subscriptions or cards.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
-  "offers": {
-    "@type": "Offer",
-    "price": "0.001",
-    "priceCurrency": "USD"
-  },
+  "isAccessibleForFree": true,
   "featureList": [
     "Markdown to HTML conversion via REST API",
-    "Pay-per-call pricing with Litecoin",
+    "0.001 LTC packages with 100 prepaid calls",
     "10 free calls included",
-    "CORS-enabled, no auth keys required"
+    "CORS-enabled with optional API keys"
   ],
   "provider": {
     "@type": "Organization",
@@ -274,7 +270,7 @@ Type here, then hit Convert.</textarea>
         <div class="card">
           <span class="ico" aria-hidden="true">🪙</span>
           <h3>Micropayments</h3>
-          <p>$0.001 per call, billed in Litecoin. No subscriptions, no credit cards, no lock-in. Top up your on-chain balance once and ship — no middleman taking a cut.</p>
+          <p>0.001 LTC buys 100 prepaid calls. Claim the confirmed transaction with your API key; retries are idempotent and the same txid cannot fund two keys.</p>
         </div>
         <div class="card">
           <span class="ico" aria-hidden="true">🔓</span>
@@ -317,14 +313,22 @@ Type here, then hit Convert.</textarea>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/docs</code></h3>
-        <p>Plain-text API usage guide with request and response examples for the live v1.4.0 service. <a href="http://147.15.103.217/md2html/docs" style="color:var(--accent)">Read the API docs</a>.</p>
+        <p>Plain-text API usage guide with request and response examples for the live v1.5.0 service. <a href="http://147.15.103.217/md2html/docs" style="color:var(--accent)">Read the API docs</a>.</p>
 <pre><span class="cmt"># open in a browser</span>
 <span class="str">http://147.15.103.217/md2html/docs</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/payment</code></h3>
-        <p>Returns the Litecoin wallet address and payment instructions for continuing after the free tier.</p>
+        <p>Returns the Litecoin wallet, fixed package size, included calls, confirmation requirement, and claim endpoint.</p>
 <pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/payment</span></pre>
+      </div>
+      <div class="endpoint">
+        <h3><span class="method post">POST</span><code>/payment/claim</code></h3>
+        <p>Verify a confirmed Litecoin txid and credit prepaid calls to the API key in <code>X-API-Key</code>.</p>
+<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">http://147.15.103.217/md2html/payment/claim</span> <span class="str">\\</span>
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\\</span>
+  <span class="flag">-H</span> <span class="str">"X-API-Key: ***"</span> <span class="str">\\</span>
+  <span class="flag">-d</span> <span class="str">'{"txid":"&lt;64-hex-txid&gt;"}'</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/usage</code></h3>
@@ -349,15 +353,15 @@ Type here, then hit Convert.</textarea>
       <h2>Rate Limiting</h2>
       <div class="ratelimit">
         <strong>30 requests/min</strong> per client &middot; <strong>10 free calls</strong> then top-up with LTC.
-        Over the limit returns <code>429</code>. Free tier resets 10 credits at first run, after which calls
-        require a positive LTC balance after sending LTC to the wallet returned by <code>GET /payment</code>.
+        Over the rate limit returns <code>429</code>. After the 10-call allowance, billable routes return
+        <code>402</code> until a confirmed LTC package is claimed against an API key.
       </div>
     </section>
 
     <section>
       <h2>Pricing</h2>
-      <p class="price">$0.001 <span class="unit">per call</span></p>
-      <p class="sub">Pay via Litecoin — no subscriptions, no upfront cost, no card required.</p>
+      <p class="price">0.001 LTC <span class="unit">per 100 calls</span></p>
+      <p class="sub">Fixed on-chain package — no subscription or card required. One confirmation before claim.</p>
     </section>
 
     <section>
@@ -366,16 +370,13 @@ Type here, then hit Convert.</textarea>
         <label>LTC Wallet Address — tap to select</label>
         <div class="addr" id="ltcAddr">Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG</div>
       </div>
-      <p class="hint">Send any amount of LTC; fund balance is applied per call. Direct on-chain, no middleman.</p>
+      <p class="hint">Send 0.001 LTC per 100-call package, wait for one confirmation, then claim the txid with <code>X-API-Key</code>.</p>
     </section>
 
     <section>
-      <h2>Join the Waitlist</h2>
-      <form action="#" method="post" onsubmit="return false">
-        <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
-        <button type="submit">Get Early Access</button>
-      </form>
-      <p class="hint">Be the first to know when we launch. No spam.</p>
+      <h2>Feedback &amp; Support</h2>
+      <p>Found a bug or want an endpoint? Open a public issue or start a discussion in the repository.</p>
+      <p><a href="https://github.com/danielbenevides-ops/md2html-api/discussions" style="color:var(--accent)">GitHub Discussions</a> · <a href="https://github.com/danielbenevides-ops/md2html-api/issues" style="color:var(--accent)">GitHub Issues</a></p>
     </section>
 
     <section>
@@ -384,19 +385,19 @@ Type here, then hit Convert.</textarea>
         <li>
           <details>
             <summary>Is it free?</summary>
-            <div class="ans">Yes — the first <strong>10 calls are free</strong>, no payment required. After that, it's <strong>$0.001 per call</strong>, billed in Litecoin. No subscription, no credit card, ever.</div>
+            <div class="ans">Yes — the first <strong>10 billable calls are free</strong>. After that, <strong>0.001 LTC buys 100 prepaid calls</strong>. No subscription or credit card.</div>
           </details>
         </li>
         <li>
           <details>
             <summary>Do I need an account?</summary>
-            <div class="ans">No. There's no auth, no signup, and no API keys. <code class="path">POST /md2html/convert</code> works directly from your browser, CLI, or server — just send JSON and get HTML back.</div>
+            <div class="ans">Free calls can use source-IP billing without signup. For a separate quota or prepaid calls, mint an API key with <code>GET /register</code> and send it in <code>X-API-Key</code>.</div>
           </details>
         </li>
         <li>
           <details>
             <summary>What about rate limits?</summary>
-            <div class="ans">Clients are capped at <strong>30 requests/minute</strong>. Exceeding it returns HTTP <code>429</code>. Free tier resets 10 credits at first run; beyond that, calls require a positive LTC balance after sending LTC to the wallet returned by <code>GET /payment</code>.</div>
+            <div class="ans">Clients are capped at <strong>30 requests/minute</strong>. Exceeding it returns HTTP <code>429</code>. Exhausting the free allowance returns <code>402</code>; a confirmed payment claim adds prepaid calls.</div>
           </details>
         </li>
         <li>

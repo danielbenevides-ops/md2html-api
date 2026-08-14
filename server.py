@@ -12,13 +12,15 @@ from urllib.parse import urlparse
 from html.parser import HTMLParser
 from billing import (
     record_call, register_client, check_usage, generate_api_key, is_valid_api_key,
-    _load_usage, _save_usage, FREE_TIER_LIMIT, CRYPTO_WALLET,
+    _load_usage, _save_usage, FREE_TIER_LIMIT, CRYPTO_WALLET, credit_payment,
+    LTC_PACKAGE_SATOSHIS, CALLS_PER_PACKAGE, MIN_PAYMENT_CONFIRMATIONS,
 )
+from payment_claims import verify_ltc_transaction, VerificationError
 from analytics import log_call, get_stats, daily_report
 from extra_endpoints import HANDLERS as ENDPOINT_HANDLERS  # /json/prettify, /text/stats, /slug
 
 PORT = 8777
-VERSION = "1.4.0"  # added /markdown/lint, /html/minify, /table/parse
+VERSION = "1.5.0"  # added verified LTC payment claims and prepaid credits
 MAX_BODY = 1024 * 1024  # 1MB body cap (anti-OOM)
 RATE_LIMIT_WINDOW = 60  # seconds
 RATE_LIMIT_MAX = 30  # max requests per IP per window
@@ -301,6 +303,7 @@ def key_info(key):
     entry = _key_record(key) or {}
     calls_made = int(entry.get("call_count", 0) or 0)
     remaining = max(FREE_TIER_LIMIT - calls_made, 0)
+    paid_credits = max(int(entry.get("purchased_calls", 0) or 0), 0)
     return {
         "api_key": key,
         "status": "active",
@@ -308,12 +311,14 @@ def key_info(key):
         "usage": {
             "calls_made": calls_made,
             "free_tier_limit": FREE_TIER_LIMIT,
+            "paid_credits_remaining": paid_credits,
         },
         # Keep the flat fields consistent with the existing /usage response.
         "calls_made": calls_made,
         "free_tier_limit": FREE_TIER_LIMIT,
         "remaining_free_calls": remaining,
         "remaining": remaining,
+        "paid_credits_remaining": paid_credits,
     }
 
 
@@ -344,13 +349,17 @@ def rotate_key(old_key, ip=None):
         while new_key in data:
             new_key = generate_api_key()
         now = int(time.time())
+        paid_credits = max(int(old_entry.pop("purchased_calls", 0) or 0), 0)
+        payment_claims = old_entry.pop("payment_claims", [])
         old_entry["revoked"] = True
         old_entry["revoked_at"] = now
         old_entry["replaced_by"] = new_key
         data[new_key] = {
-            "call_count": 0,
-            "first_call": now,
-            "last_call": now,
+            "call_count": max(int(old_entry.get("call_count", 0) or 0), 0),
+            "purchased_calls": paid_credits,
+            "payment_claims": payment_claims,
+            "first_call": int(old_entry.get("first_call", now) or now),
+            "last_call": int(old_entry.get("last_call", now) or now),
             "kind": "api_key",
             "ip": ip,
             "plan": old_entry.get("plan", "free"),
@@ -1059,6 +1068,7 @@ GET /health   -> {"status":"ok","version":"...","uptime_seconds":N,"port":8777,.
 GET /docs     -> this guide
 GET /pricing  -> {"free_tier": {...}, "paid_tier": {...}, "rate_limit": {...}}
 GET /payment  -> {"wallet_address": "...", "currency": "LTC"}
+POST /payment/claim -> verify a confirmed LTC txid and add prepaid calls (X-API-Key required)
 GET /usage    -> {"calls_made": N, "remaining": N}
 GET /keys/info -> authenticated key plan and usage (X-API-Key required)
 POST /keys/revoke -> revoke the authenticated key (X-API-Key required)
@@ -1604,6 +1614,28 @@ SWAGGER_SPEC = {
                 "responses": {"200": {"description": "Payment info", "content": {"application/json": {"schema": {"type": "object", "properties": {"wallet_address": {"type": "string"}, "currency": {"type": "string", "example": "LTC"}}}}}}},
             }
         },
+        "/payment/claim": {
+            "post": {
+                "summary": "Claim confirmed LTC payment as prepaid API calls",
+                "security": [{"ApiKeyAuth": []}],
+                "requestBody": {
+                    "required": True,
+                    "content": {"application/json": {"schema": {
+                        "type": "object",
+                        "required": ["txid"],
+                        "properties": {"txid": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}},
+                    }}},
+                },
+                "responses": {
+                    "200": {"description": "Payment claimed or already credited idempotently"},
+                    "400": {"description": "Invalid txid, destination, or amount"},
+                    "401": {"description": "Missing or invalid API key"},
+                    "404": {"description": "Transaction not found"},
+                    "409": {"description": "Unconfirmed or already claimed by another key"},
+                    "502": {"description": "Blockchain verifier unavailable"},
+                },
+            }
+        },
         "/usage": {
             "get": {
                 "summary": "Check current client usage",
@@ -1703,7 +1735,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     "uptime": f"{int(uptime // 86400)}d {int((uptime % 86400) // 3600)}h {int((uptime % 3600) // 60)}m {int(uptime % 60)}s",
                     "port": PORT,
                     "timestamp": int(time.time()),
-                    "endpoints": ["/health", "/register", "/keys/info", "/keys/revoke", "/keys/rotate", "/convert", "/markdown/lint", "/html/minify", "/table/parse", "/sanitize", "/batch", "/webhook/register", "/webhook/test", "/minify", "/html/extract", "/url/shorten", "/cron/parse", "/regex/test", "/json/prettify", "/text/stats", "/slug", "/docs", "/pricing", "/payment", "/usage", "/stats"]
+                    "endpoints": ["/health", "/register", "/keys/info", "/keys/revoke", "/keys/rotate", "/convert", "/markdown/lint", "/html/minify", "/table/parse", "/sanitize", "/batch", "/webhook/register", "/webhook/test", "/minify", "/html/extract", "/url/shorten", "/cron/parse", "/regex/test", "/json/prettify", "/text/stats", "/slug", "/docs", "/pricing", "/payment", "/payment/claim", "/usage", "/stats"]
                 }))
                 log_call("/health", client_ip, 200, time.time() - t0)
             elif self.path == "/swagger.json":
@@ -1721,10 +1753,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         "auth": "none — identified by IP or X-API-Key"
                     },
                     "paid_tier": {
-                        "price_per_call": "0.001 USD",
                         "currency": "LTC",
+                        "package_ltc": LTC_PACKAGE_SATOSHIS / 100_000_000,
+                        "calls_per_package": CALLS_PER_PACKAGE,
+                        "claim_endpoint": "/payment/claim",
+                        "minimum_confirmations": MIN_PAYMENT_CONFIRMATIONS,
                         "wallet_address": WALLET_ADDRESS,
-                        "note": "Send Litecoin to the wallet to continue after the free tier."
+                        "note": "Send a package amount, then claim the confirmed txid with your API key."
                     },
                     "rate_limit": {"max": RATE_LIMIT_MAX, "window_seconds": RATE_LIMIT_WINDOW},
                     "max_body_bytes": MAX_BODY
@@ -1734,7 +1769,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.send(200, json.dumps({
                     "wallet_address": WALLET_ADDRESS,
                     "currency": "LTC",
-                    "message": "Send any amount of Litecoin to this address to continue using the API after the free tier."
+                    "package_ltc": LTC_PACKAGE_SATOSHIS / 100_000_000,
+                    "calls_per_package": CALLS_PER_PACKAGE,
+                    "claim_endpoint": "/payment/claim",
+                    "minimum_confirmations": MIN_PAYMENT_CONFIRMATIONS,
+                    "message": "Send 0.001 LTC per 100 calls, wait for confirmation, then POST the txid to /payment/claim with X-API-Key."
                 }))
                 log_call("/payment", client_ip, 200, time.time() - t0)
             elif self.path == "/register":
@@ -1762,6 +1801,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     "client": cid,
                     "calls_made": usage.get("call_count", 0),
                     "free_tier_limit": FREE_TIER_LIMIT,
+                    "paid_credits_remaining": max(int(usage.get("purchased_calls", 0) or 0), 0),
                     "remaining": max(FREE_TIER_LIMIT - usage.get("call_count", 0), 0)
                 }))
                 log_call("/usage", client_ip, 200, time.time() - t0)
@@ -1830,6 +1870,42 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if _is_revoked_key(self):
                 self.send(401, json.dumps({"error": "API key has been revoked"}))
                 log_call(path, client_ip, 401, time.time() - t0)
+                return
+
+            # ---- /payment/claim: verify tx and add prepaid credits ----------
+            if path == "/payment/claim":
+                key, error = _require_managed_key(self)
+                if error:
+                    self.send(401, json.dumps(error))
+                    log_call(path, client_ip, 401, time.time() - t0)
+                    return
+                raw_body, status, err = self._read_body()
+                if raw_body is None:
+                    self.send(status, err)
+                    log_call(path, client_ip, status, time.time() - t0)
+                    return
+                try:
+                    payload = json.loads(raw_body)
+                except (TypeError, ValueError):
+                    self.send(400, json.dumps({"error": "Invalid JSON"}))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                if not isinstance(payload, dict):
+                    self.send(400, json.dumps({"error": "Request body must be a JSON object"}))
+                    log_call(path, client_ip, 400, time.time() - t0)
+                    return
+                try:
+                    verified = verify_ltc_transaction(payload.get("txid"), WALLET_ADDRESS)
+                except VerificationError as exc:
+                    self.send(exc.status, json.dumps({"error": exc.message}))
+                    log_call(path, client_ip, exc.status, time.time() - t0)
+                    return
+                result = credit_payment(
+                    key, verified["txid"], verified["value_satoshis"], verified["confirmations"]
+                )
+                response_status = int(result.get("status", 500))
+                self.send(response_status, json.dumps(result))
+                log_call(path, client_ip, response_status, time.time() - t0)
                 return
 
             # ---- /keys/revoke: invalidate the authenticated key ------------

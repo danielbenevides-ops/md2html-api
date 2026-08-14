@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
   title: MD2HTML API
-  version: 1.4.0
+  version: 1.5.0
   description: >-
     Markdown conversion and developer utility API. Billable POST requests have
     a free allowance of 10 calls per client (X-API-Key or source IP), then
-    return HTTP 402 with Litecoin payment information.
+    return HTTP 402 with a fixed Litecoin package and an on-chain claim flow.
   contact:
     url: https://github.com/danielbenevides-ops/md2html-api
 servers:
@@ -586,6 +586,43 @@ paths:
               schema: { $ref: '#/components/schemas/PaymentInfo' }
         '429': { $ref: '#/components/responses/RateLimited' }
         '500': { $ref: '#/components/responses/InternalError' }
+  /payment/claim:
+    post:
+      tags: [Billing]
+      summary: Claim a confirmed Litecoin payment as prepaid calls
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [txid]
+              properties:
+                txid:
+                  type: string
+                  pattern: '^[0-9a-fA-F]{64}$'
+      responses:
+        '200':
+          description: Payment credited, or an idempotent retry of the same claim
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claimed: { type: boolean }
+                  idempotent: { type: boolean }
+                  txid: { type: string }
+                  calls_credited: { type: integer }
+                  paid_credits_remaining: { type: integer }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Litecoin transaction not found }
+        '409': { description: Transaction unconfirmed or already claimed by another key }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '502': { description: Blockchain verifier temporarily unavailable }
+        '500': { $ref: '#/components/responses/InternalError' }
   /usage:
     get:
       tags: [Billing]
@@ -1058,9 +1095,12 @@ components:
         paid_tier:
           type: object
           properties:
-            price_per_call: { type: string }
             currency: { type: string, enum: [LTC] }
             wallet_address: { type: string }
+            package_ltc: { type: number, example: 0.001 }
+            calls_per_package: { type: integer, example: 100 }
+            claim_endpoint: { type: string, example: /payment/claim }
+            minimum_confirmations: { type: integer, example: 1 }
             note: { type: string }
         rate_limit:
           type: object
@@ -1070,10 +1110,14 @@ components:
         max_body_bytes: { type: integer, example: 1048576 }
     PaymentInfo:
       type: object
-      required: [wallet_address, currency, message]
+      required: [wallet_address, currency, package_ltc, calls_per_package, claim_endpoint, minimum_confirmations, message]
       properties:
         wallet_address: { type: string }
         currency: { type: string, enum: [LTC] }
+        package_ltc: { type: number, example: 0.001 }
+        calls_per_package: { type: integer, example: 100 }
+        claim_endpoint: { type: string, example: /payment/claim }
+        minimum_confirmations: { type: integer, example: 1 }
         message: { type: string }
     Usage:
       type: object
@@ -1083,6 +1127,7 @@ components:
         calls_made: { type: integer }
         free_tier_limit: { type: integer }
         remaining: { type: integer }
+        paid_credits_remaining: { type: integer }
     Stats:
       type: object
       required: [total_calls, unique_ips, calls_by_endpoint, calls_by_status, potential_conversions, avg_latency]

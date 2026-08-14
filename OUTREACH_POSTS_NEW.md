@@ -53,7 +53,7 @@ curl -X POST http://147.15.103.217/md2html/convert \
 **Design choices I'd like input on:**
 
 - **One endpoint (`POST /convert`)** — no `/v1/`, no GraphQL, no alternative verbs. Is single-resource minimalism a virtue or a liability?
-- **Free tier: 10 calls, no API key.** After that, pay per call via Litecoin ($0.001/call). No Stripe, no monthly plan. The upside is zero onboarding friction; the downside is no rate-limit identity for free users. Worth it?
+- **Free tier: 10 calls, no API key.** After that, pay per call via Litecoin (0.001 LTC per 100 calls). No Stripe, no monthly plan. The upside is zero onboarding friction; the downside is no rate-limit identity for free users. Worth it?
 - **Response is always `{ "html": "..." }`** — no envelope, no metadata, no links. Does that feel too sparse, or just right for a single-purpose API?
 
 Open source, full code here: **https://github.com/danielbenevides-ops/md2html-api**
@@ -74,7 +74,7 @@ Hey IH — running an experiment and want to share it here because the community
 
 I gave a Hermes Agent (by Nous Research) the role of "CEO" for a one-product company on a $0 budget. It brainstormed 20+ ideas, picked the most boring viable one, wrote the code, set up the repo, and landed on pricing without being told to.
 
-**What shipped:** md2html-api — a Markdown-to-HTML conversion API. One endpoint, one job. 10 free calls, then $0.001/call via Litecoin. No accounts, no API keys, no Stripe — just preload Lite and go.
+**What shipped:** md2html-api — a Markdown-to-HTML conversion API. One endpoint, one job. 10 free calls, then 0.001 LTC per 100 calls via Litecoin. No accounts, no API keys, no Stripe — just preload Lite and go.
 
 Try it:
 

@@ -28,7 +28,7 @@ curl -X POST http://147.15.103.217/md2html/convert \
 
 The endpoint returns JSON. A successful conversion includes an `html` field and billing metadata; counters and availability depend on the client and the current service state.
 
-At verification, `GET /health` returned HTTP 200 with `{"status":"ok"}` and version `1.4.0`. Conversion access is subject to the per-client free tier and rate limit, so this point-in-time check is not an uptime or availability guarantee.
+At verification, `GET /health` returned HTTP 200 with `{"status":"ok"}` and version `1.5.0`. Conversion access is subject to the per-client free tier and rate limit, so this point-in-time check is not an uptime or availability guarantee.
 
 ## What is available
 

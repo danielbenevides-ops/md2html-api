@@ -10,7 +10,7 @@
 
 **Live API:** <http://147.15.103.217/md2html/>
 **Repository:** <https://github.com/danielbenevides-ops/md2html-api>
-**Release:** `v1.4.0` — 26 endpoints, LTC micropayments, and an enhanced landing page
+**Release:** `v1.5.0` — 27 endpoints, verified LTC payment claims, and prepaid call credits
 
 ## ⭐ Stargazers
 
@@ -25,7 +25,7 @@ If MD2HTML API is useful, [star the repository](https://github.com/danielbenevid
 - **Useful:** Markdown conversion plus sanitization, batching, code minification, HTML extraction, URL shortening, cron parsing, regex testing, JSON formatting, text statistics, and slug generation.
 - **Safe by default:** HTML escaping, URL-scheme filtering, request-size limits, CORS, and security headers.
 - **Low-friction:** 10 free calls per client, with no signup required for the free tier.
-- **Predictable:** pay only when you need more calls, at `$0.001` per call in Litecoin (LTC).
+- **Predictable:** 0.001 LTC buys 100 prepaid calls; claim the confirmed transaction on-chain with your API key.
 - **Portable:** the server uses only Python's standard library and runs anywhere Python 3.8+ runs.
 
 ## Quick Start
@@ -51,7 +51,7 @@ Want to self-host? Jump to [Self-Host](#self-host).
 
 **Base URL:** `http://147.15.103.217/md2html` · **Port:** `8777` · **Rate limit:** 30 req/min/IP · **Max body:** 1MB
 
-Billable `POST` endpoints are marked ✓ below; API-key management, registration, and webhook control routes are free. All `GET` endpoints are free. Add `-H 'X-API-Key: <YOUR_API_KEY>'` to bill against your key rather than your IP.
+Billable `POST` endpoints are marked ✓ below; API-key management, registration, payment claim, and webhook control routes are free. All `GET` endpoints are free. Add `-H 'X-API-Key: ***'` to bill against your key rather than your IP.
 
 | # | Method | Endpoint | Billed | Description |
 |---|--------|----------|:------:|-------------|
@@ -78,9 +78,10 @@ Billable `POST` endpoints are marked ✓ below; API-key management, registration
 | 21 | `POST` | `/slug` | ✓ | Generate a URL-safe slug from a title |
 | 22 | `GET` | `/docs` | — | Plain-text usage guide for the entire API |
 | 23 | `GET` | `/pricing` | — | Public plan and rate-limit information |
-| 24 | `GET` | `/payment` | — | LTC wallet address for pay-per-call billing |
-| 25 | `GET` | `/usage` | — | Current usage and remaining free-tier calls |
-| 26 | `GET` | `/stats` | — | Aggregate call and client statistics |
+| 24 | `GET` | `/payment` | — | LTC wallet, package size, calls, and claim instructions |
+| 25 | `POST` | `/payment/claim` | — | Verify a confirmed LTC txid and credit the authenticated key |
+| 26 | `GET` | `/usage` | — | Current free usage and prepaid credit balance |
+| 27 | `GET` | `/stats` | — | Aggregate call and client statistics |
 
 ### 1. `GET /health`
 
@@ -88,8 +89,8 @@ Billable `POST` endpoints are marked ✓ below; API-key management, registration
 curl http://147.15.103.217/md2html/health
 ```
 ```json
-{"status":"ok","version":"1.4.0","uptime_seconds":3612.5,"uptime":"0d 1h 0m 12s","port":8777,
- "endpoints":["/health","/register","/keys/info","/keys/revoke","/keys/rotate","/convert","/markdown/lint","/html/minify","/table/parse","/sanitize","/batch","/webhook/register","/webhook/test","/minify","/html/extract","/url/shorten","/cron/parse","/regex/test","/json/prettify","/text/stats","/slug","/docs","/pricing","/payment","/usage","/stats"]}
+{"status":"ok","version":"1.5.0","uptime_seconds":3612.5,"uptime":"0d 1h 0m 12s","port":8777,
+ "endpoints":["/health","/register","/keys/info","/keys/revoke","/keys/rotate","/convert","/markdown/lint","/html/minify","/table/parse","/sanitize","/batch","/webhook/register","/webhook/test","/minify","/html/extract","/url/shorten","/cron/parse","/regex/test","/json/prettify","/text/stats","/slug","/docs","/pricing","/payment","/payment/claim","/usage","/stats"]}
 ```
 
 ### 2. `GET /register`
@@ -98,9 +99,28 @@ curl http://147.15.103.217/md2html/health
 curl http://147.15.103.217/md2html/register
 ```
 ```json
-{"api_key":"mk_abc123def456","wallet_address":"Las7JLihEnYvACUt4jgxqcFZrD3RgVM",
+{"api_key":"mk_abc123def456","wallet_address":"Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
  "free_tier_limit":10,"calls_made":0,"remaining":10}
 ```
+
+### 3. Buy and claim prepaid calls
+
+1. Keep the API key returned by `/register` private.
+2. Send **0.001 LTC per 100 calls** to the address returned by `GET /payment`.
+3. Wait for at least one confirmation.
+4. Claim the transaction once; retries with the same key are idempotent.
+
+```bash
+curl -X POST http://147.15.103.217/md2html/payment/claim \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: ***' \
+  -d '{"txid":"<64-hex-litecoin-transaction-id>"}'
+
+curl http://147.15.103.217/md2html/usage \
+  -H 'X-API-Key: ***'
+```
+
+A transaction cannot be claimed by two API keys. Payments below 0.001 LTC do not create a package; multiples credit proportionally (for example, 0.002 LTC credits 200 calls).
 
 ### 6. `POST /convert`
 
@@ -169,7 +189,8 @@ curl http://147.15.103.217/md2html/pricing
 ```
 ```json
 {"free_tier":{"calls":10,"price_per_call":"0.00 USD","auth":"none — identified by IP or X-API-Key"},
- "paid_tier":{"price_per_call":"0.001 USD","currency":"LTC","wallet_address":"Las7JLihEnYvACUt4jgxqcFZrD3RgVM"},
+ "paid_tier":{"currency":"LTC","wallet_address":"Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG","package_ltc":0.001,
+ "calls_per_package":100,"claim_endpoint":"/payment/claim","minimum_confirmations":1},
  "rate_limit":{"max":30,"window_seconds":60},"max_body_bytes":1048576}
 ```
 
@@ -179,11 +200,11 @@ curl http://147.15.103.217/md2html/pricing
 curl http://147.15.103.217/md2html/payment
 ```
 ```json
-{"wallet_address":"Las7JLihEnYvACUt4jgxqcFZrD3RgVM","currency":"LTC",
- "message":"Send any amount of Litecoin to this address to continue using the API after the free tier."}
+{"wallet_address":"Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG","currency":"LTC","package_ltc":0.001,
+ "calls_per_package":100,"claim_endpoint":"/payment/claim","minimum_confirmations":1}
 ```
 
-### 25. `GET /usage`
+### 26. `GET /usage`
 
 Query by IP (no header) or by API key (`-H 'X-API-Key: <YOUR_API_KEY>'`).
 
@@ -191,7 +212,7 @@ Query by IP (no header) or by API key (`-H 'X-API-Key: <YOUR_API_KEY>'`).
 curl http://147.15.103.217/md2html/usage
 ```
 ```json
-{"client":"203.0.113.42","calls_made":7,"free_tier_limit":10,"remaining":3}
+{"client":"203.0.113.42","calls_made":7,"free_tier_limit":10,"remaining":3,"paid_credits_remaining":0}
 ```
 
 ---
@@ -201,11 +222,11 @@ curl http://147.15.103.217/md2html/usage
 | Plan | Price | Details |
 |---|---:|---|
 | Free tier | **$0** | 10 calls per client, identified by IP or `X-API-Key` |
-| Pay per call | **$0.001/call** | Litecoin (LTC) micropayments after the free tier |
+| Prepaid LTC | **0.001 LTC / 100 calls** | Claim a confirmed txid against an API key; integer multiples scale linearly |
 
-There are no subscriptions, credit cards, or third-party runtime dependencies. Billed `POST` operations return `HTTP 402 Payment Required` after the 10-call free tier and include the payment wallet. Public `GET` endpoints such as health, docs, pricing, usage, and statistics remain free.
+There are no subscriptions, credit cards, or third-party runtime dependencies. Billed `POST` operations return `HTTP 402 Payment Required` after the 10-call free tier and include the payment package. Claiming a confirmed txid adds prepaid calls. Public `GET` endpoints remain free.
 
-- **LTC wallet:** `Las7JLihEnYvACUt4jgxqcFZrD3RgVM`
+- **LTC wallet:** `Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG`
 - **Rate limit:** 30 requests per minute per IP
 - **Maximum request body:** 1 MiB (Markdown conversion is limited to 50 KiB)
 
@@ -395,7 +416,8 @@ curl -X POST http://147.15.103.217/md2html/slug \
 - Batch conversion with a 50-item limit and partial-result handling on payment exhaustion
 - API-key registration with IP fallback for clients that do not use a key
 - 30 requests/minute/IP rate limiting and a 1 MiB body cap
-- CORS and security headers (`nosniff` and `DENY` frame policy)
+- `HEAD` support, CORS, and security headers (`nosniff`, frame denial, no-referrer, and restricted browser permissions)
+- Verified on-chain LTC claims with idempotent txids and prepaid-credit balances
 - Built-in analytics, OpenAPI output, and an enhanced browser-friendly landing page
 
 ## Self-hosting
@@ -433,11 +455,12 @@ Configured via constants at the top of [`server.py`](server.py):
 
 | Constant | Default | Description |
 |---|---|---|
-| `PORT` / `VERSION` | `8777` / `1.4.0` | Listening port / API version (returned by `/health`) |
+| `PORT` / `VERSION` | `8777` / `1.5.0` | Listening port / API version (returned by `/health`) |
 | `MAX_BODY` | `1MB` | Max request body size |
 | `RATE_LIMIT_WINDOW` / `RATE_LIMIT_MAX` | `60` / `30` | Rate-limit window (s) / max requests per window per IP |
 | `FREE_TIER_LIMIT` | `10` | Free calls per client (in `billing.py`) |
-| `WALLET_ADDRESS` | from `wallet.json` | LTC address for payments |
+| `CRYPTO_WALLET` | env `LTC_WALLET_ADDRESS` or `wallet_public.json` | Public LTC address; the server never reads private wallet material |
+| `LTC_PACKAGE_SATOSHIS` / `CALLS_PER_PACKAGE` | `100000` / `100` | Fixed prepaid package (0.001 LTC for 100 calls) |
 
 ### Development
 

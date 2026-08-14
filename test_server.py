@@ -154,6 +154,93 @@ class MD2HTMLAPITest(unittest.TestCase):
         self.assertNotIn("private_key_wif", public_wallet)
         self.assertNotIn("private_key_hex", public_wallet)
 
+    def test_confirmed_payment_claim_is_idempotent_and_funds_paid_calls(self):
+        key = self.key()
+        txid = "a" * 64
+
+        for _ in range(billing.FREE_TIER_LIMIT):
+            self.assertEqual(billing.record_call(key)["status"], 200)
+        self.assertEqual(billing.record_call(key)["status"], 402)
+
+        claimed = billing.credit_payment(
+            key,
+            txid,
+            billing.LTC_PACKAGE_SATOSHIS,
+            billing.MIN_PAYMENT_CONFIRMATIONS,
+        )
+        self.assertTrue(claimed["claimed"])
+        self.assertEqual(claimed["calls_credited"], billing.CALLS_PER_PACKAGE)
+
+        repeated = billing.credit_payment(
+            key,
+            txid,
+            billing.LTC_PACKAGE_SATOSHIS,
+            billing.MIN_PAYMENT_CONFIRMATIONS,
+        )
+        self.assertTrue(repeated["idempotent"])
+        self.assertEqual(
+            repeated["paid_credits_remaining"], billing.CALLS_PER_PACKAGE
+        )
+
+        paid_call = billing.record_call(key)
+        self.assertEqual(paid_call["status"], 200)
+        self.assertEqual(paid_call["billing_source"], "prepaid_ltc")
+        self.assertEqual(
+            paid_call["paid_credits_remaining"], billing.CALLS_PER_PACKAGE - 1
+        )
+
+        replacement = server.rotate_key(key, ip="127.0.0.1")
+        replacement_info = server.key_info(replacement)
+        self.assertEqual(
+            replacement_info["paid_credits_remaining"], billing.CALLS_PER_PACKAGE - 1
+        )
+        self.assertEqual(
+            replacement_info["calls_made"], billing.FREE_TIER_LIMIT + 2
+        )
+        replay_after_rotation = billing.credit_payment(
+            replacement,
+            txid,
+            billing.LTC_PACKAGE_SATOSHIS,
+            billing.MIN_PAYMENT_CONFIRMATIONS,
+        )
+        self.assertTrue(replay_after_rotation["idempotent"])
+
+        other_key = self.key()
+        conflict = billing.credit_payment(
+            other_key,
+            txid,
+            billing.LTC_PACKAGE_SATOSHIS,
+            billing.MIN_PAYMENT_CONFIRMATIONS,
+        )
+        self.assertEqual(conflict["status"], 409)
+
+    def test_payment_claim_endpoint_verifies_tx_and_credits_key(self):
+        key = self.key()
+        txid = "b" * 64
+        original_verifier = server.verify_ltc_transaction
+        server.verify_ltc_transaction = lambda supplied, wallet: {
+            "txid": supplied,
+            "value_satoshis": billing.LTC_PACKAGE_SATOSHIS * 2,
+            "confirmations": billing.MIN_PAYMENT_CONFIRMATIONS,
+        }
+        try:
+            status, body, _ = request(
+                self.api,
+                "/payment/claim",
+                "POST",
+                {"txid": txid},
+                headers=auth(key),
+            )
+        finally:
+            server.verify_ltc_transaction = original_verifier
+
+        self.assertEqual(status, 200)
+        self.assertTrue(body["claimed"])
+        self.assertEqual(body["calls_credited"], billing.CALLS_PER_PACKAGE * 2)
+        self.assertEqual(
+            billing.check_usage(key)["purchased_calls"], billing.CALLS_PER_PACKAGE * 2
+        )
+
     def test_convert_basic_markdown_to_html(self):
         key = self.key()
         markdown = "# Hello\n\n**bold** and *italic*\n\n- one\n- two"

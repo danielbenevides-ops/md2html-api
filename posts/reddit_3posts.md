@@ -6,7 +6,7 @@
 
 ## Post 1 — r/webdev (Showoff Saturday)
 
-**Title:** Built a Markdown-to-HTML API that costs $0.001/call paid in Litecoin
+**Title:** Built a Markdown-to-HTML API that costs 0.001 LTC per 100 calls
 
 **Body:**
 
@@ -17,7 +17,7 @@ POST http://147.15.103.217/md2html/convert
 Body: your markdown → response: HTML
 ```
 
-The angle that got me actually building it: existing converters are either paid per month, rate-limited to uselessness, or want you to install a whole markdown lib. I wanted a single curl call. 10 free calls, then $0.001/call — and the billing is Litecoin micropayments, not a card. No Stripe account, no KYC, deposit a few cents of LTC and you're calling forever.
+The angle that got me actually building it: existing converters are either paid per month, rate-limited to uselessness, or want you to install a whole markdown lib. I wanted a single curl call. 10 free calls, then 0.001 LTC per 100 calls — and the billing is Litecoin micropayments, not a card. No Stripe account, no KYC, deposit a few cents of LTC and you're calling forever.
 
 Stack is deliberately unsexy: Python stdlib `http.server`, no Flask/FastAPI, no database, file-based ledger. The whole thing is a few hundred lines and deploys with one SSH command. 10 endpoints total (convert, health, balance, deposit address, docs, etc.).
 

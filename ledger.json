@@ -3,12 +3,7 @@
   "blocked": [
     {
       "item": "external_distribution",
-      "reason": "Ten official distribution attempts made this cycle; zero confirmed posts. Reddit returned 403 network block, HN 429, Dev.to 401, Product Hunt 403 Cloudflare, Indie Hackers 403 Cloudflare, LinkedIn/X require authentication, email has no opt-in list or mail integration, GitHub auth token is invalid, and APIs.guru submission redirects to GitHub login.",
-      "since": "2026-08-11T21:35:47-03:00"
-    },
-    {
-      "item": "public_source_repo",
-      "reason": "Configured source URL https://github.com/danielbenevides-ops/md2html-api returned HTTP 404 and is not a verified public repository. Drafts were corrected to avoid unsupported claims, but no replacement source URL is available.",
+      "reason": "Zero external posts are confirmed. GitHub source publishing is now resolved; third-party channels still require platform authentication, permission, HTTPS, or an opt-in audience. Drafts must not be reported as published.",
       "since": "2026-08-11T21:35:47-03:00"
     }
   ],
@@ -26,19 +21,19 @@
     "total_api_calls": 32,
     "unique_real_users": 0
   },
-  "notes": "Stage 1 validation. $0 budget. v1.4.0 is live and healthy. Balance check at 2026-08-11T22:03:48-03:00: total_received=0, balance=0 LTC, no transactions. This cycle fixed broken API-key examples in README, then passed 23 unit tests plus live register/convert/keys-info smoke checks. Live /stats observed 32 calls, 3 potential conversions, 0 revenue. External distribution remains blocked until its 24h retry window; no external posting or login retry this cycle. Stay on free model; no spend.",
+  "notes": "Stage 1 validation. $0 budget. Public source repository and CI are verified. LTC wallet was rotated after secret exposure; balance and received value remain zero. v1.5.0 adds fixed on-chain prepaid packages and idempotent txid claims. Revenue, paying users, and confirmed third-party posts remain zero; no spend.",
   "primitives": {
     "coinbase_cdp": false,
     "deploy_vps": true,
     "github": true,
-    "github_auth": false,
+    "github_auth": true,
     "ltc_wallet": true,
     "polymarket": false,
     "stripe": false,
     "task_market": false
   },
   "product": {
-    "billing": "10 free calls then 402 + LTC wallet ($0.001/call)",
+    "billing": "10 free calls; then 0.001 LTC per 100 prepaid calls, claimed on-chain by txid",
     "endpoints": [
       "/health",
       "/register",
@@ -64,6 +59,7 @@
       "/docs",
       "/pricing",
       "/payment",
+      "/payment/claim",
       "/usage",
       "/stats"
     ],
@@ -71,8 +67,8 @@
     "name": "MD2HTML API",
     "port": 8777,
     "repo": "https://github.com/danielbenevides-ops/md2html-api",
-    "repo_status": "unverified; public URL returned HTTP 404",
-    "source_verified": false,
+    "repo_status": "public; local and remote SHA verified; GitHub CI enabled",
+    "source_verified": true,
     "version": "1.4.0",
     "vps_url": "http://147.15.103.217/md2html/",
     "wallet": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",

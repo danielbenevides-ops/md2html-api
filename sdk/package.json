@@ -1,6 +1,6 @@
 {
   "name": "md2html-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Node.js SDK (fetch-based, zero deps) for the MD2HTML Markdown-to-HTML micropayment API.",
   "main": "md2html-client.js",
   "homepage": "http://147.15.103.217/md2html/",
@@ -36,6 +36,6 @@
     "directory": "sdk"
   },
   "scripts": {
-    "test": "node -e \"const {MD2HTMLClient}=require('./md2html-client');const c=new MD2HTMLClient();c.health().then(r=>{console.log('health ok:',JSON.stringify(r).slice(0,120));return c.convert('# Hi **world**');}).then(r=>{console.log('convert ok, html head:',String(r.html).slice(0,80));}).catch(e=>{console.error('FAIL',e.message);process.exit(1);});\""
+    "test": "node -e \"const {MD2HTMLClient}=require('./md2html-client');const c=new MD2HTMLClient();c.health().then(r=>{if(r.status!=='ok')throw new Error('health not ok');console.log('health ok',r.version);return c.payment();}).then(r=>{if(!r.wallet_address)throw new Error('wallet missing');console.log('payment metadata ok');}).catch(e=>{console.error('FAIL',e.message);process.exit(1);});\""
   }
 }

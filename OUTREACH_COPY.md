@@ -194,11 +194,11 @@ If you'd want a different option (sanitize-only mode, syntax highlighting hooks,
 
 **Send gate:** Use only for a recipient who explicitly opted in or requested product updates. Do not use scraped/public addresses, buy lists, or send follow-ups without a reply. This workspace contains no mail-sending integration or approved/opt-in MD2HTML recipient list.
 
-**Subject:** Markdown → HTML over HTTP for $0.001/call in LTC
+**Subject:** Markdown → HTML over HTTP for 0.001 LTC per 100 calls
 
 Hi [Name],
 
-If your app turns Markdown into HTML, MD2HTML offers a small hosted option: one JSON `POST`, no SDK, with usage priced at **$0.001 per call in Litecoin (LTC)**.
+If your app turns Markdown into HTML, MD2HTML offers a small hosted option: one JSON `POST`, no SDK, with usage priced at **0.001 LTC per 100 calls in Litecoin (LTC)**.
 
 Try it here: <http://147.15.103.217/md2html/>
 Docs/source: <https://github.com/danielbenevides-ops/md2html-api>

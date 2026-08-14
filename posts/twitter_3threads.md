@@ -22,7 +22,7 @@ POST http://147.15.103.217/md2html/convert
 Send Markdown as JSON, for example `{"markdown":"# Hello **world**"}`, and the service returns HTML in JSON.
 
 **3/7**
-The live health endpoint reports version `v1.4.0`:
+The live health endpoint reports version `v1.5.0`:
 
 http://147.15.103.217/md2html/health
 
@@ -33,7 +33,7 @@ https://github.com/danielbenevides-ops/md2html-api
 The pricing model is pay-per-call:
 
 • 10 free calls
-• Then $0.001 USD per call
+• Then 0.001 LTC per 100 calls
 • Payment currency: LTC
 
 Current pricing details:
@@ -95,7 +95,7 @@ http://147.15.103.217/md2html/docs
 Integration details to account for:
 
 • 10 free calls
-• $0.001 USD per call afterward, in LTC
+• 0.001 LTC per 100 calls afterward, in LTC
 • 30 requests per minute
 • `402` after the free allowance is exhausted
 
@@ -115,7 +115,7 @@ Test the live endpoint, inspect the returned HTML, and verify limits and billing
 MD2HTML uses a simple published allowance:
 
 • 10 free calls
-• Then $0.001 USD per call
+• Then 0.001 LTC per 100 calls
 • LTC is the payment currency
 
 Pricing endpoint:

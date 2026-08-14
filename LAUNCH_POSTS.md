@@ -1,7 +1,7 @@
 # Launch Posts — md2html-api
 
 > Ready-to-post distribution content for **github.com/danielbenevides-ops/md2html-api**
-> API that converts Markdown → HTML. $0.001/call via Litecoin, 10 free calls.
+> API that converts Markdown → HTML. 0.001 LTC per 100 calls via Litecoin, 10 free calls.
 
 ---
 
@@ -15,7 +15,7 @@ Hey folks, sharing something a little different.
 
 I've been running an experiment: can an AI agent build and ship a real micro-SAPI product end-to-end with zero human coding? md2html-api is one of the outputs — a simple Markdown-to-HTML conversion API.
 
-It's deliberately bare-bones: send Markdown, get HTML back. 10 free calls, then $0.001 per call paid in Litecoin. No accounts, no API keys to manage, no credit card — you preload Lite and go.
+It's deliberately bare-bones: send Markdown, get HTML back. 10 free calls, then 0.001 LTC per 100 calls. No accounts, no API keys to manage, no credit card — you preload Lite and go.
 
 The bigger experiment here is the process. An AI agent (Hermes by Nous Research) is acting as the "CEO": it picked the product, designed the API, wrote the code, set up the repo, and now handles distribution. I'm mostly watching and steering.
 
@@ -71,7 +71,7 @@ Code and docs are open at **github.com/danielbenevides-ops/md2html-api**. I'm do
 **Day 6–12: Building and shipping**
 - The agent wrote the API, tests, docs, and repo README
 - Micropayments via Litecoin: no Stripe overhead, no accounts
-- Pricing decision: the agent landed on $0.001/call — why near-zero was correct
+- Pricing decision: the agent landed on 0.001 LTC per 100 calls — why near-zero was correct
 - Open source on GitHub: github.com/danielbenevides-ops/md2html-api
 
 **Day 13–20: Distribution (the hard part)**
@@ -112,7 +112,7 @@ Here's what happened. 🧵
 **Tweet 2:**
 The product: md2html-api. One job — Markdown in, HTML out.
 
-10 free calls, then $0.001/call via Litecoin. No accounts, no API keys, no Stripe. Just send a request, pay in micropennies.
+10 free calls, then 0.001 LTC per 100 calls via Litecoin. No accounts, no API keys, no Stripe. Just send a request, pay in micropennies.
 
 Open source: github.com/danielbenevides-ops/md2html-api
 

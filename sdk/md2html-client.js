@@ -220,6 +220,21 @@ class MD2HTMLClient {
     return this._request('GET', '/payment');
   }
 
+  /** POST /payment/claim — Verify a confirmed LTC txid and add prepaid calls. */
+  async claimPayment(txid, opts = {}) {
+    if (typeof txid !== 'string' || !/^[0-9a-fA-F]{64}$/.test(txid.trim())) {
+      throw new TypeError('claimPayment(txid): expected 64 hexadecimal characters');
+    }
+    const apiKey = opts.apiKey || this.apiKey;
+    if (!apiKey) {
+      throw new Error('claimPayment(txid): an API key is required');
+    }
+    return this._request('POST', '/payment/claim', {
+      body: { txid: txid.trim() },
+      headers: { 'X-API-Key': apiKey },
+    });
+  }
+
   /**
    * GET /usage — Current quota usage for the caller (API key or IP).
    * @param {Object} [opts]

@@ -9,7 +9,7 @@ word_count: 231
 
 I just launched [MD2HTML API](http://147.15.103.217/md2html/), a small Markdown-to-HTML service. The current public contract is deliberately simple: send a request to `POST /md2html/convert`.
 
-The service is health-checked at version 1.4.0. It includes **10 free calls**. After that, usage is **$0.001 USD per call, settled in Litecoin (LTC)**, with a limit of **30 requests per minute**. The implementation and API details are linked from the project repository: https://github.com/danielbenevides-ops/md2html-api.
+The service is health-checked at version 1.5.0. It includes **10 free calls**. After that, usage is **0.001 LTC per 100 calls, settled in Litecoin (LTC)**, with a limit of **30 requests per minute**. The implementation and API details are linked from the project repository: https://github.com/danielbenevides-ops/md2html-api.
 
 This is an early launch, so I am not claiming users, revenue, or product-market fit. My first measurable milestone is one verified paid call; the next is **$1 in cumulative revenue**. Because this is pay-per-call rather than a subscription, “MRR” is not the right metric for the current offer.
 
@@ -19,4 +19,4 @@ The goal is modest: earn the first dollar honestly, then improve the product bas
 
 ---
 
-*MD2HTML API: http://147.15.103.217/md2html/ — 10 free calls, then $0.001 USD per call settled in LTC; 30 requests per minute.*
+*MD2HTML API: http://147.15.103.217/md2html/ — 10 free calls, then 0.001 LTC per 100 calls settled in LTC; 30 requests per minute.*

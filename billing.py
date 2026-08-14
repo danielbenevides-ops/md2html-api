@@ -14,12 +14,16 @@ place of the IP to get a per-key bucket instead of a per-IP bucket.
 import ipaddress
 import json
 import os
+import re
 import secrets
 import threading
 import time
 
 USAGE_FILE = "usage.json"
 FREE_TIER_LIMIT = 10
+LTC_PACKAGE_SATOSHIS = 100_000  # 0.001 LTC
+CALLS_PER_PACKAGE = 100
+MIN_PAYMENT_CONFIRMATIONS = 1
 _DEFAULT_WALLET = "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG"
 _WALLET_PUBLIC_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wallet_public.json")
 
@@ -107,6 +111,8 @@ def register_client(ip=None):
         data = _load_usage()
         data[key] = {
             "call_count": 0,
+            "purchased_calls": 0,
+            "payment_claims": [],
             "first_call": now,
             "last_call": now,
             "kind": "api_key",
@@ -149,17 +155,33 @@ def record_call(api_key):
         _save_usage(data)
 
         count = entry["call_count"]
-        remaining = FREE_TIER_LIMIT - count
+        free_remaining = max(FREE_TIER_LIMIT - count, 0)
+        purchased = max(int(entry.get("purchased_calls", 0)), 0)
 
         if count > FREE_TIER_LIMIT:
+            if purchased > 0:
+                purchased -= 1
+                entry["purchased_calls"] = purchased
+                _save_usage(data)
+                return {
+                    "status": 200,
+                    "calls_made": count,
+                    "remaining": 0,
+                    "paid_credits_remaining": purchased,
+                    "free_tier_limit": FREE_TIER_LIMIT,
+                    "billing_source": "prepaid_ltc",
+                }
             return {
                 "status": 402,
                 "error": "Payment Required",
                 "message": (
                     f"Free tier limit ({FREE_TIER_LIMIT} calls) exceeded. "
-                    f"You made {count} calls. Send payment to continue."
+                    f"Send 0.001 LTC for {CALLS_PER_PACKAGE} calls, then claim the txid."
                 ),
                 "wallet_address": CRYPTO_WALLET,
+                "claim_endpoint": "/payment/claim",
+                "package_ltc": LTC_PACKAGE_SATOSHIS / 100_000_000,
+                "calls_per_package": CALLS_PER_PACKAGE,
                 "calls_made": count,
                 "free_tier_limit": FREE_TIER_LIMIT,
             }
@@ -167,8 +189,76 @@ def record_call(api_key):
         return {
             "status": 200,
             "calls_made": count,
-            "remaining": max(remaining, 0),
+            "remaining": free_remaining,
+            "paid_credits_remaining": purchased,
             "free_tier_limit": FREE_TIER_LIMIT,
+            "billing_source": "free_tier",
+        }
+
+
+def credit_payment(api_key, txid, value_satoshis, confirmations):
+    """Atomically credit a confirmed LTC transaction to one managed API key.
+
+    The transaction id is globally single-use. Repeating the same claim for the
+    same key is idempotent; attempting to reuse it for another key is rejected.
+    """
+    with _USAGE_LOCK:
+        data = _load_usage()
+        if not is_valid_api_key(api_key, data):
+            return {"status": 401, "error": "Invalid API key"}
+        if not isinstance(txid, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", txid):
+            return {"status": 400, "error": "Invalid Litecoin transaction id"}
+        txid = txid.lower()
+        confirmations = int(confirmations or 0)
+        value_satoshis = int(value_satoshis or 0)
+        if confirmations < MIN_PAYMENT_CONFIRMATIONS:
+            return {
+                "status": 409,
+                "error": "Payment is not confirmed yet",
+                "confirmations": confirmations,
+                "required_confirmations": MIN_PAYMENT_CONFIRMATIONS,
+            }
+        packages = value_satoshis // LTC_PACKAGE_SATOSHIS
+        if packages < 1:
+            return {
+                "status": 400,
+                "error": "Payment amount is below the minimum package",
+                "received_satoshis": value_satoshis,
+                "required_satoshis": LTC_PACKAGE_SATOSHIS,
+            }
+
+        for owner_key, owner_entry in data.items():
+            for claim in owner_entry.get("payment_claims", []) if isinstance(owner_entry, dict) else []:
+                if claim.get("txid") == txid:
+                    if owner_key == api_key:
+                        return {
+                            "status": 200,
+                            "claimed": False,
+                            "idempotent": True,
+                            "txid": txid,
+                            "calls_credited": int(claim.get("calls_credited", 0)),
+                            "paid_credits_remaining": int(owner_entry.get("purchased_calls", 0)),
+                        }
+                    return {"status": 409, "error": "Transaction already claimed"}
+
+        calls = packages * CALLS_PER_PACKAGE
+        entry = data[api_key]
+        entry["purchased_calls"] = max(int(entry.get("purchased_calls", 0)), 0) + calls
+        entry.setdefault("payment_claims", []).append({
+            "txid": txid,
+            "value_satoshis": value_satoshis,
+            "confirmations_at_claim": confirmations,
+            "calls_credited": calls,
+            "claimed_at": int(time.time()),
+        })
+        _save_usage(data)
+        return {
+            "status": 200,
+            "claimed": True,
+            "idempotent": False,
+            "txid": txid,
+            "calls_credited": calls,
+            "paid_credits_remaining": entry["purchased_calls"],
         }
 
 

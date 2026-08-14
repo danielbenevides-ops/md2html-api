@@ -7,11 +7,12 @@ an API key, inspect usage, pretty-print JSON, and calculate text statistics.
 from __future__ import annotations
 
 import json
+import re
 import urllib.error
 import urllib.request
 from typing import Any, Dict, Iterable, List, Optional, Union
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 DEFAULT_BASE_URL = "http://147.15.103.217/md2html"
 
 
@@ -195,8 +196,20 @@ class Md2HTMLClient:
         return response_object
 
     def get_usage(self) -> Dict[str, Any]:
-        """Return usage and remaining free-tier calls."""
+        """Return free usage and prepaid-credit balance."""
         return self._require_object(self._request("GET", "/usage"), "/usage")
+
+    def claim_payment(self, txid: str) -> Dict[str, Any]:
+        """Verify a confirmed Litecoin txid and credit this client's API key."""
+        txid = self._require_text(txid, "txid").strip()
+        if not re.fullmatch(r"[0-9a-fA-F]{64}", txid):
+            raise ValueError("txid must be exactly 64 hexadecimal characters")
+        if not self.api_key:
+            raise ValueError("api_key is required to claim a payment")
+        return self._require_object(
+            self._request("POST", "/payment/claim", {"txid": txid}),
+            "/payment/claim",
+        )
 
     def prettify_json(self, data: Union[str, Dict[str, Any], List[Any]]) -> str:
         """Pretty-print JSON data and return the formatted JSON string."""

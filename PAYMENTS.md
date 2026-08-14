@@ -5,10 +5,11 @@ micro-payments with **NO KYC, NO paid service, NO third-party custody**.
 
 ## TL;DR
 
-1. Run `python generate_wallet.py` to generate a **Litecoin (LTC)** address.
-2. Copy the printed `LTC address` (starts with `L` or `M`).
-3. Paste it into your landing page's payment box (snippet is printed too).
-4. Users send LTC directly on-chain to that address. You hold the keys.
+1. Generate a **Litecoin (LTC)** wallet once with `python generate_wallet.py`.
+2. Publish only the address from `wallet_public.json`; keep `wallet.json` local.
+3. Users register an API key and send 0.001 LTC per 100-call package.
+4. After one confirmation they call `POST /payment/claim` with the txid.
+5. The API verifies the output on-chain and atomically adds prepaid calls.
 
 ## Why Litecoin (LTC)?
 
@@ -41,8 +42,8 @@ python generate_wallet.py
 
 Output:
 
-- Prints the **LTC address** (safe to share) and the **private key** (SECRET).
-- Saves everything to `wallet.json` (chmod 600).
+- Prints only the **LTC address** (safe to share).
+- Saves private material to ignored `wallet.json`; it is never read by the API process.
 
 ## SECURITY — read this
 
@@ -59,6 +60,29 @@ Free option: paste the LTC address into a public blockchain explorer.
 - https://blockchair.com/litecoin/address/<your-address>
 
 These show incoming transactions and balance without any signup.
+
+## Live API claim flow
+
+The hosted API uses a fixed package rather than a volatile USD conversion:
+
+- `0.001 LTC` = `100` prepaid calls.
+- Integer multiples scale linearly.
+- At least one confirmation is required.
+- A txid is globally single-use; retrying it with the same API key is idempotent.
+- A txid already claimed by another key returns `409 Conflict`.
+
+```bash
+curl http://147.15.103.217/md2html/register
+
+curl -X POST http://147.15.103.217/md2html/payment/claim \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: ***' \
+  -d '{"txid":"<64-hex-litecoin-txid>"}'
+```
+
+Verification is read-only through BlockCypher. The service never receives or
+loads the private key. If the verifier is unavailable, the endpoint fails closed
+with `502` and does not grant credits.
 
 ## Recovering / spending funds later
 

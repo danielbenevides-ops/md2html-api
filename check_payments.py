@@ -12,15 +12,13 @@ business wallet and credit the client's account.
    transactions.json so each payment is auditable.
 4. Print a human-readable summary (balance, tx count, credits applied, errors).
 
-Pricing model (from billing.py / PAYMENTS.md):
-  - Free tier : 10 calls per client, then 402 Payment Required.
-  - Paid calls: $0.001 / call, settled in LTC.
+Pricing model (from billing.py):
+  - Free tier: 10 calls per client, then 402 Payment Required.
+  - Prepaid package: 0.001 LTC credits 100 calls; integer multiples scale linearly.
 
-BlockCypher returns values in satoshi (1 LTC = 100_000_000 sat). We convert to
-LTC, then to a USD value using an optional price hook, then to call credits at
-the posted $0.001/call rate. A flat fallback price of $1 USD = 1 LTC is used if
-no price source is available, so credits are at minimum 1:1 LTC-to-calls when the
-price lookup fails — adjust PRICE_FALLBACK_USD_PER_LTC below to tighten this.
+BlockCypher returns values in satoshi (1 LTC = 100_000_000 sat). Credits use the
+same fixed package constants as the live claim endpoint; no exchange-rate oracle
+or fallback price can change the number of calls granted.
 
 Usage:
     python check_payments.py                 # normal run
@@ -45,6 +43,8 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+from billing import CALLS_PER_PACKAGE, LTC_PACKAGE_SATOSHIS
+
 # -------------------------------------------------------------------------
 # Configuration
 # -------------------------------------------------------------------------
@@ -55,13 +55,6 @@ USAGE_FILE = BASE_DIR / "usage.json"
 TXLOG_FILE = BASE_DIR / "transactions.json"
 STATE_FILE = BASE_DIR / ".payments_state.json"               # tracks processed tx ids
 
-# Pricing ------------------------------------------------------------ {{{{{
-# $0.001 per API call. To convert an LTC amount to call credits we need a
-# USD/LTC price. We try a free Coinbase API; if it fails we fall back to a
-# conservative constant so the script never silently skips a credit.
-USD_PER_CALL = 0.001
-PRICE_FALLBACK_USD_PER_LTC = 70.0   # conservative, update as needed
-# }}}}}
 
 # BlockCypher endpoints ------------------------------------------------ {{{{{
 BC_FULL_URL = (
@@ -94,16 +87,7 @@ def http_get_json(url: str, timeout: int = HTTP_TIMEOUT) -> dict:
     return json.loads(raw)
 
 
-def fetch_ltc_usd_price() -> float:
-    """Best-effort spot price from Coinbase public API. Falls back on error."""
-    url = ("https://api.coinbase.com/v2/prices/LTC-USD/spot")
-    try:
-        d = http_get_json(url, timeout=10)
-        return float(d["data"]["amount"])
-    except Exception as e:  # network/parse/rate-limit
-        log(f"  price lookup failed ({e!r}); using fallback "
-            f"USD/LTC={PRICE_FALLBACK_USD_PER_LTC}")
-        return PRICE_FALLBACK_USD_PER_LTC
+
 
 
 # -------------------------------------------------------------------------
@@ -218,28 +202,24 @@ def already_processed(state: dict, txid: str) -> bool:
     return txid in set(state.get(PROCESSED_KEY, []))
 
 
-def apply_credit(account_key: str, ltc_amount: float,
-                 usd_per_ltc: float, dry_run: bool) -> dict:
-    """
-    Convert `ltc_amount` to call credits and add them to the account entry in
-    usage.json. Returns a dict describing what happened.
-
-    The credit is stored under "purchased_calls" (additive) on the existing
-    usage entry for `account_key`; if the entry doesn't exist it is created.
-    """
-    usd_value = ltc_amount * usd_per_ltc
-    calls = int(usd_value / USD_PER_CALL)        # truncate fractional cents
+def apply_credit(account_key: str, ltc_amount: float, dry_run: bool) -> dict:
+    """Convert an LTC amount to fixed prepaid packages and update usage.json."""
+    value_satoshis = max(int(round(ltc_amount * 100_000_000)), 0)
+    packages = value_satoshis // LTC_PACKAGE_SATOSHIS
+    calls = packages * CALLS_PER_PACKAGE
     if calls <= 0:
         return {
-            "account": account_key, "ltc": ltc_amount, "usd_value": usd_value,
-            "calls_credited": 0, "note": "amount too small for a credit",
+            "account": account_key,
+            "ltc": ltc_amount,
+            "calls_credited": 0,
+            "note": "amount below the 0.001 LTC package minimum",
         }
 
     if dry_run:
         log(f"  [dry-run] would credit {calls} calls "
-            f"(LTC={ltc_amount:.8f}, USD≈{usd_value:.4f}) to '{account_key}'")
+            f"(LTC={ltc_amount:.8f}) to '{account_key}'")
         return {"account": account_key, "ltc": ltc_amount,
-                "usd_value": usd_value, "calls_credited": calls, "dry_run": True}
+                "calls_credited": calls, "dry_run": True}
 
     usage = load_json(USAGE_FILE, {})
     now = int(time.time())
@@ -248,20 +228,14 @@ def apply_credit(account_key: str, ltc_amount: float,
         entry = {"call_count": 0, "first_call": now, "last_call": now}
         usage[account_key] = entry
 
-    # Track purchased (prepaid) credits separately from the free-tier count so
-    # billing.py's 10-free-call logic still works. billing.py reads call_count
-    # and FREE_TIER_LIMIT; purchased_calls is the topped-up pool it will draw
-    # from once the free tier is exhausted (see __init__/billing integration).
     entry["purchased_calls"] = int(entry.get("purchased_calls", 0)) + calls
     entry["last_credit_ts"] = now
     entry["last_credit_ltc"] = round(ltc_amount, 8)
     entry["last_credit_calls"] = calls
     save_json(USAGE_FILE, usage)
 
-    log(f"  + credited {calls} calls to '{account_key}' "
-        f"(LTC={ltc_amount:.8f}, USD≈{usd_value:.4f})")
-    return {"account": account_key, "ltc": ltc_amount,
-            "usd_value": usd_value, "calls_credited": calls}
+    log(f"  + credited {calls} calls to '{account_key}' (LTC={ltc_amount:.8f})")
+    return {"account": account_key, "ltc": ltc_amount, "calls_credited": calls}
 
 
 # -------------------------------------------------------------------------
@@ -327,8 +301,8 @@ def main() -> int:
     # 2) Dedupe against previously-processed txids
     state = load_state()
     processed = set(state.get(PROCESSED_KEY, []))
-    usd_per_ltc = fetch_ltc_usd_price()
-    log(f"Spot LTC/USD ≈ {usd_per_ltc:.2f}  (rate ${USD_PER_CALL}/call)")
+    log(f"Fixed package: {LTC_PACKAGE_SATOSHIS / 100_000_000:.3f} LTC "
+        f"for {CALLS_PER_PACKAGE} calls")
 
     new_records: list[dict] = []
     total_calls = 0
@@ -351,12 +325,10 @@ def main() -> int:
             "value_ltc": inc["value_ltc"],
             "confirmations": inc["confirmations"],
             "credited_account": args.account,
-            "usd_value_at_credit": round(inc["value_ltc"] * usd_per_ltc, 6),
             "processed_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        result = apply_credit(args.account, inc["value_ltc"], usd_per_ltc,
-                              dry_run=args.dry_run)
+        result = apply_credit(args.account, inc["value_ltc"], dry_run=args.dry_run)
         rec["calls_credited"] = result.get("calls_credited", 0)
         rec["dry_run"] = bool(args.dry_run)
         total_calls += rec["calls_credited"]
@@ -397,11 +369,13 @@ def _print_summary(snap: dict, new_records: list[dict], total_calls: int) -> Non
     # Show current usage.json state for the default account too
     try:
         usage = load_json(USAGE_FILE, {})
-        print(f"  usage.json accounts: {len(usage)}")
-        for k, v in usage.items():
-            cc = v.get("call_count", 0)
-            pc = v.get("purchased_calls", 0)
-            print(f"    · {k}: calls={cc}  purchased={pc}")
+        managed = sum(1 for key in usage if str(key).startswith("mk_"))
+        ip_clients = len(usage) - managed
+        total_usage_calls = sum(int(v.get("call_count", 0)) for v in usage.values())
+        total_purchased = sum(int(v.get("purchased_calls", 0)) for v in usage.values())
+        print(f"  usage.json accounts: {len(usage)} (managed={managed}, IP={ip_clients})")
+        print(f"  usage calls total : {total_usage_calls}")
+        print(f"  prepaid remaining : {total_purchased}")
     except Exception as e:
         print(f"  (could not read usage.json: {e!r})")
     print("=" * 64)
