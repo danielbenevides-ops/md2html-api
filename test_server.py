@@ -118,6 +118,21 @@ class MD2HTMLAPITest(unittest.TestCase):
         self.assertEqual(headers["Access-Control-Allow-Origin"], "*")
         self.assertEqual(headers["X-Content-Type-Options"], "nosniff")
 
+    def test_head_matches_get_headers_without_a_body(self):
+        get_status, get_body, get_headers = request(self.api, "/health")
+        head_status, head_body, head_headers = request(self.api, "/health", method="HEAD")
+
+        self.assertEqual(get_status, 200)
+        self.assertEqual(head_status, get_status)
+        self.assertEqual(head_body, "")
+        self.assertEqual(head_headers["Content-Type"], get_headers["Content-Type"])
+        self.assertEqual(head_headers["Content-Length"], get_headers["Content-Length"])
+        self.assertEqual(head_headers["Referrer-Policy"], "no-referrer")
+        self.assertEqual(
+            head_headers["Permissions-Policy"],
+            "camera=(), microphone=(), geolocation=()",
+        )
+
     def test_openapi_covers_all_advertised_health_endpoints(self):
         health_status, health, _ = request(self.api, "/health")
         spec_status, spec, _ = request(self.api, "/swagger.json")

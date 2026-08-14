@@ -1642,8 +1642,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
         # Security headers
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
         self.send_header("Access-Control-Max-Age", "86400")
         if self.close_connection:
@@ -1652,7 +1654,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Connection", "keep-alive")
             self.send_header("Keep-Alive", "timeout=5, max=100")
         self.end_headers()
-        self.wfile.write(data)
+        if self.command != "HEAD":
+            self.wfile.write(data)
+
+    def do_HEAD(self):
+        """Return GET-equivalent headers without a response body."""
+        self.do_GET()
 
     def do_OPTIONS(self):
         """CORS preflight handler — respond 204 with allow headers, no body."""
@@ -1662,7 +1669,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(204)
             self.send_header("Content-Length", "0")
             self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
             self.send_header("Access-Control-Max-Age", "86400")
             if self.close_connection:
