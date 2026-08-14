@@ -13,7 +13,7 @@ Call the rendering out to a markdown to html api instead. Your function stays ti
 ```javascript
 export async function handler(request) {
   const body = await request.json();
-  const res = await fetch("http://147.15.103.217/md2html/convert", {
+  const res = await fetch("https://147.15.103.217.sslip.io/md2html/convert", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ markdown: body.markdown })
@@ -46,7 +46,7 @@ import urllib.request
 def lambda_handler(event, context):
     body = json.loads(event["body"])
     req = urllib.request.Request(
-        "http://147.15.103.217/md2html/convert",
+        "https://147.15.103.217.sslip.io/md2html/convert",
         data=json.dumps({"markdown": body["markdown"]}).encode(),
         headers={"Content-Type": "application/json"}
     )

@@ -5,7 +5,7 @@
 This is the review-ready row for the current service state:
 
 ```markdown
-| [MD2HTML](http://147.15.103.217/md2html/) | Convert Markdown to HTML and provide developer utilities | apiKey | No | Yes |  |
+| [MD2HTML](https://147.15.103.217.sslip.io/md2html/) | Convert Markdown to HTML and provide developer utilities | apiKey | Yes | Yes |  |
 ```
 
 Columns are `API`, `Description`, `Auth`, `HTTPS`, `CORS`, and `Postman Collection`, respectively. The description is 56 characters.
@@ -21,9 +21,9 @@ Columns are `API`, `Description`, `Auth`, `HTTPS`, `CORS`, and `Postman Collecti
 - **Section/order:** The service is a candidate for the `Documents` section because its primary function is Markdown-to-HTML conversion. The row must be placed alphabetically in the upstream section when a PR is prepared.
 - **Stale count avoided:** Older local distribution notes propose “10 server-side endpoints,” while the current `docs/API_REFERENCE.md` describes 18 endpoints and `server.py` exposes a broader manifest. The row therefore avoids an unstable endpoint count.
 
-## Link and HTTPS blocker
+## Verified link and HTTPS state
 
-- **Current service URL:** `http://147.15.103.217/md2html/`
-- **Current HTTPS value:** `No` — the live service is HTTP-only. This row deliberately does not claim HTTPS support.
-- **Merge risk:** The local `API_DIRECTORIES.md` notes that public-apis expects HTTPS to be available (`HTTPS: Yes`) and warns that link checking and reviewer policy may reject an HTTP-only entry. HTTPS may therefore block merge even though the API otherwise fits the documented rules.
-- **Required follow-up:** Put the service behind a stable HTTPS URL with a valid TLS certificate, then replace the link and `No` with the verified HTTPS URL and `Yes` before submission. No external service was contacted while preparing this artifact.
+- **Current service URL:** `https://147.15.103.217.sslip.io/md2html/`
+- **Current HTTPS value:** `Yes` — the live service has a valid Let's Encrypt certificate and TLS 1.3 was verified externally.
+- **Merge risk:** Upstream maintainers still decide whether the service fits current listing policy. Do not claim acceptance before the PR is merged.
+- **Required follow-up:** Refresh the fork against upstream, run its tests, and submit exactly one PR.

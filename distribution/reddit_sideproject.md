@@ -9,14 +9,14 @@ The public deployment currently reports version 1.4.0 and 26 product endpoints. 
 A real first call:
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown":"# Hello\n\nThis is **bold**."}'
 ```
 
 API contract:
 
-http://147.15.103.217/md2html/swagger.json
+https://147.15.103.217.sslip.io/md2html/swagger.json
 
 The trial includes 10 billable calls per IP or API key. After that, billable POST requests return HTTP 402 with LTC payment information. The service enforces 30 requests per minute per source IP and a 1 MiB request-body limit.
 

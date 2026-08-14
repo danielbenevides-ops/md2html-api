@@ -1,6 +1,6 @@
 # MD2HTML API
 
-[![LIVE API](https://img.shields.io/website?url=http%3A%2F%2F147.15.103.217%2Fmd2html%2Fhealth&label=LIVE%20API&style=for-the-badge)](http://147.15.103.217/md2html/)
+[![LIVE API](https://img.shields.io/website?url=http%3A%2F%2F147.15.103.217%2Fmd2html%2Fhealth&label=LIVE%20API&style=for-the-badge)](https://147.15.103.217.sslip.io/md2html/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Dependencies: none](https://img.shields.io/badge/dependencies-none-2ea44f)](#features)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](#license)
@@ -8,7 +8,7 @@
 
 > Convert Markdown to clean HTML and use a practical set of developer utilities over HTTP. **Python standard library only. No pip install. No subscriptions.**
 
-**Live API:** <http://147.15.103.217/md2html/>
+**Live API:** <https://147.15.103.217.sslip.io/md2html/>
 **Repository:** <https://github.com/danielbenevides-ops/md2html-api>
 **Release:** `v1.5.0` — 27 endpoints, verified LTC payment claims, and prepaid call credits
 
@@ -34,13 +34,13 @@ No signup, no API key — 10 free calls per IP:
 
 ```bash
 # 1. Health check
-curl http://147.15.103.217/md2html/health
+curl https://147.15.103.217.sslip.io/md2html/health
 # 2. Convert Markdown to HTML
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello **world**\n\n- item 1\n- item 2"}'
 # 3. Mint your own API key (separate free-tier bucket)
-curl http://147.15.103.217/md2html/register
+curl https://147.15.103.217.sslip.io/md2html/register
 ```
 
 Want to self-host? Jump to [Self-Host](#self-host).
@@ -49,7 +49,7 @@ Want to self-host? Jump to [Self-Host](#self-host).
 
 ## API Reference
 
-**Base URL:** `http://147.15.103.217/md2html` · **Port:** `8777` · **Rate limit:** 30 req/min/IP · **Max body:** 1MB
+**Base URL:** `https://147.15.103.217.sslip.io/md2html` · **Port:** `8777` · **Rate limit:** 30 req/min/IP · **Max body:** 1MB
 
 Billable `POST` endpoints are marked ✓ below; API-key management, registration, payment claim, and webhook control routes are free. All `GET` endpoints are free. Add `-H 'X-API-Key: ***'` to bill against your key rather than your IP.
 
@@ -86,7 +86,7 @@ Billable `POST` endpoints are marked ✓ below; API-key management, registration
 ### 1. `GET /health`
 
 ```bash
-curl http://147.15.103.217/md2html/health
+curl https://147.15.103.217.sslip.io/md2html/health
 ```
 ```json
 {"status":"ok","version":"1.5.0","uptime_seconds":3612.5,"uptime":"0d 1h 0m 12s","port":8777,
@@ -96,7 +96,7 @@ curl http://147.15.103.217/md2html/health
 ### 2. `GET /register`
 
 ```bash
-curl http://147.15.103.217/md2html/register
+curl https://147.15.103.217.sslip.io/md2html/register
 ```
 ```json
 {"api_key":"mk_abc123def456","wallet_address":"Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
@@ -111,12 +111,12 @@ curl http://147.15.103.217/md2html/register
 4. Claim the transaction once; retries with the same key are idempotent.
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/payment/claim \
+curl -X POST https://147.15.103.217.sslip.io/md2html/payment/claim \
   -H 'Content-Type: application/json' \
   -H 'X-API-Key: ***' \
   -d '{"txid":"<64-hex-litecoin-transaction-id>"}'
 
-curl http://147.15.103.217/md2html/usage \
+curl https://147.15.103.217.sslip.io/md2html/usage \
   -H 'X-API-Key: ***'
 ```
 
@@ -127,7 +127,7 @@ A transaction cannot be claimed by two API keys. Payments below 0.001 LTC do not
 Supports headings, bold, italic, links, inline code, fenced code blocks, unordered lists. Body: `application/json` (`{"markdown": "..."}`) or `text/plain` (raw markdown). Max markdown input: 50KB.
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello **world**\n\nVisit [example](https://example.com)."}'
 ```
@@ -141,7 +141,7 @@ curl -X POST http://147.15.103.217/md2html/convert \
 Input JSON string goes in the `"json"` field (not the request body itself).
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/json/prettify \
+curl -X POST https://147.15.103.217.sslip.io/md2html/json/prettify \
   -H "Content-Type: application/json" \
   -d '{"json": "{\"b\":2,\"a\":1}"}'
 ```
@@ -152,7 +152,7 @@ curl -X POST http://147.15.103.217/md2html/json/prettify \
 ### 20. `POST /text/stats`
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/text/stats \
+curl -X POST https://147.15.103.217.sslip.io/md2html/text/stats \
   -H "Content-Type: application/json" \
   -d '{"text": "The quick brown fox jumps over the lazy dog."}'
 ```
@@ -166,7 +166,7 @@ curl -X POST http://147.15.103.217/md2html/text/stats \
 Input goes in the `"title"` field. Handles non-ASCII and special characters.
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/slug \
+curl -X POST https://147.15.103.217.sslip.io/md2html/slug \
   -H "Content-Type: application/json" \
   -d '{"title": "Café — Menus & Drinks!"}'
 ```
@@ -177,7 +177,7 @@ curl -X POST http://147.15.103.217/md2html/slug \
 ### 22. `GET /docs`
 
 ```bash
-curl http://147.15.103.217/md2html/docs
+curl https://147.15.103.217.sslip.io/md2html/docs
 ```
 
 ### 23. `GET /pricing`
@@ -185,7 +185,7 @@ curl http://147.15.103.217/md2html/docs
 No auth, not billed.
 
 ```bash
-curl http://147.15.103.217/md2html/pricing
+curl https://147.15.103.217.sslip.io/md2html/pricing
 ```
 ```json
 {"free_tier":{"calls":10,"price_per_call":"0.00 USD","auth":"none — identified by IP or X-API-Key"},
@@ -197,7 +197,7 @@ curl http://147.15.103.217/md2html/pricing
 ### 24. `GET /payment`
 
 ```bash
-curl http://147.15.103.217/md2html/payment
+curl https://147.15.103.217.sslip.io/md2html/payment
 ```
 ```json
 {"wallet_address":"Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG","currency":"LTC","package_ltc":0.001,
@@ -209,7 +209,7 @@ curl http://147.15.103.217/md2html/payment
 Query by IP (no header) or by API key (`-H 'X-API-Key: <YOUR_API_KEY>'`).
 
 ```bash
-curl http://147.15.103.217/md2html/usage
+curl https://147.15.103.217.sslip.io/md2html/usage
 ```
 ```json
 {"client":"203.0.113.42","calls_made":7,"free_tier_limit":10,"remaining":3,"paid_credits_remaining":0}
@@ -237,7 +237,7 @@ See [`PAYMENTS.md`](PAYMENTS.md) for the billing lifecycle and payment verificat
 No API key is required for the first 10 calls:
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H 'Content-Type: application/json' \
   -d '{"markdown":"# Hello **world**\n\n- one\n- two"}'
 ```
@@ -254,10 +254,10 @@ Example response:
 To get a separate free-tier bucket, mint an API key:
 
 ```bash
-curl http://147.15.103.217/md2html/register
+curl https://147.15.103.217.sslip.io/md2html/register
 # {"api_key":"mk_...","free_tier_limit":10,"calls_made":0,"remaining":10}
 
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H 'Content-Type: application/json' \
   -H 'X-API-Key: <YOUR_API_KEY>' \
   -d '{"markdown":"## Keyed request"}'
@@ -270,7 +270,7 @@ import json
 from urllib.request import Request, urlopen
 
 request = Request(
-    "http://147.15.103.217/md2html/convert",
+    "https://147.15.103.217.sslip.io/md2html/convert",
     data=json.dumps({"markdown": "# Hello **world**"}).encode(),
     headers={"Content-Type": "application/json"},
 )
@@ -319,37 +319,37 @@ Additional operational routes are also available: `GET /swagger.json` (OpenAPI 3
 
 ```bash
 # Lint Markdown
-curl -X POST http://147.15.103.217/md2html/markdown/lint \
+curl -X POST https://147.15.103.217.sslip.io/md2html/markdown/lint \
   -H 'Content-Type: application/json' \
   -d '{"markdown":"#Hello"}'
 
 # Minify HTML source
-curl -X POST http://147.15.103.217/md2html/html/minify \
+curl -X POST https://147.15.103.217.sslip.io/md2html/html/minify \
   -H 'Content-Type: application/json' \
   -d '{"html":"<div>  <!-- comment --> hello </div>"}'
 
 # Parse a Markdown table
-curl -X POST http://147.15.103.217/md2html/table/parse \
+curl -X POST https://147.15.103.217.sslip.io/md2html/table/parse \
   -H 'Content-Type: application/json' \
   -d '{"markdown":"| Name | Age |\n| --- | ---: |\n| Ada | 36 |"}'
 
 # Sanitize untrusted Markdown
-curl -X POST http://147.15.103.217/md2html/sanitize \
+curl -X POST https://147.15.103.217.sslip.io/md2html/sanitize \
   -H 'Content-Type: application/json' \
   -d '{"markdown":"# Hello <script>alert(1)</script>"}'
 
 # Batch conversion (up to 50 items)
-curl -X POST http://147.15.103.217/md2html/batch \
+curl -X POST https://147.15.103.217.sslip.io/md2html/batch \
   -H 'Content-Type: application/json' \
   -d '{"items":["# First","## Second"]}'
 
 # Minify HTML, CSS, or JavaScript
-curl -X POST http://147.15.103.217/md2html/minify \
+curl -X POST https://147.15.103.217.sslip.io/md2html/minify \
   -H 'Content-Type: application/json' \
   -d '{"code":"<div>  Hello  </div>","type":"html"}'
 
 # Extract visible text from HTML
-curl -X POST http://147.15.103.217/md2html/html/extract \
+curl -X POST https://147.15.103.217.sslip.io/md2html/html/extract \
   -H 'Content-Type: application/json' \
   -d '{"html":"<h1>Hello</h1><p>World</p>"}'
 ```
@@ -358,52 +358,52 @@ curl -X POST http://147.15.103.217/md2html/html/extract \
 
 ```bash
 # Inspect an API key's plan and usage
-curl http://147.15.103.217/md2html/keys/info \
+curl https://147.15.103.217.sslip.io/md2html/keys/info \
   -H 'X-API-Key: <YOUR_API_KEY>'
 
 # Rotate the current API key (returns a replacement key)
-curl -X POST http://147.15.103.217/md2html/keys/rotate \
+curl -X POST https://147.15.103.217.sslip.io/md2html/keys/rotate \
   -H 'X-API-Key: <YOUR_API_KEY>'
 
 # Revoke the current API key
-curl -X POST http://147.15.103.217/md2html/keys/revoke \
+curl -X POST https://147.15.103.217.sslip.io/md2html/keys/revoke \
   -H 'X-API-Key: <YOUR_API_KEY>'
 
 # Register a batch-completion webhook
-curl -X POST http://147.15.103.217/md2html/webhook/register \
+curl -X POST https://147.15.103.217.sslip.io/md2html/webhook/register \
   -H 'Content-Type: application/json' \
   -d '{"callback_url":"https://example.com/md2html-hook"}'
 
 # Send a test webhook event
-curl -X POST http://147.15.103.217/md2html/webhook/test
+curl -X POST https://147.15.103.217.sslip.io/md2html/webhook/test
 ```
 
 ### Developer utilities
 
 ```bash
 # Shorten a URL
-curl -X POST http://147.15.103.217/md2html/url/shorten \
+curl -X POST https://147.15.103.217.sslip.io/md2html/url/shorten \
   -H 'Content-Type: application/json' \
   -d '{"url":"https://example.com/a/long/path"}'
 
 # Explain a cron expression
-curl -X POST http://147.15.103.217/md2html/cron/parse \
+curl -X POST https://147.15.103.217.sslip.io/md2html/cron/parse \
   -H 'Content-Type: application/json' \
   -d '{"expression":"*/5 * * * *"}'
 
 # Test a regular expression
-curl -X POST http://147.15.103.217/md2html/regex/test \
+curl -X POST https://147.15.103.217.sslip.io/md2html/regex/test \
   -H 'Content-Type: application/json' \
   -d '{"pattern":"\\d+","input":"abc 12 def 34","flags":"i"}'
 
 # Pretty-print JSON, calculate text stats, or generate a slug
-curl -X POST http://147.15.103.217/md2html/json/prettify \
+curl -X POST https://147.15.103.217.sslip.io/md2html/json/prettify \
   -H 'Content-Type: application/json' \
   -d '{"json":"{\"b\":2,\"a\":1}"}'
-curl -X POST http://147.15.103.217/md2html/text/stats \
+curl -X POST https://147.15.103.217.sslip.io/md2html/text/stats \
   -H 'Content-Type: application/json' \
   -d '{"text":"The quick brown fox jumps over the lazy dog."}'
-curl -X POST http://147.15.103.217/md2html/slug \
+curl -X POST https://147.15.103.217.sslip.io/md2html/slug \
   -H 'Content-Type: application/json' \
   -d '{"title":"Café — Menus & Drinks!"}'
 ```
@@ -488,4 +488,4 @@ Issues and pull requests are welcome. Please run the test and compile commands a
 
 MIT.
 
-**Live API:** <http://147.15.103.217/md2html/> · **Source:** <https://github.com/danielbenevides-ops/md2html-api>
+**Live API:** <https://147.15.103.217.sslip.io/md2html/> · **Source:** <https://github.com/danielbenevides-ops/md2html-api>

@@ -104,12 +104,12 @@ Here's where things get interesting. Instead of bundling a parser or maintaining
 
 ### Example: the free MD2HTML API
 
-We run a free **markdown to html api** at `http://147.15.103.217/md2html/`. It accepts a POST with your Markdown and returns clean HTML.
+We run a free **markdown to html api** at `https://147.15.103.217.sslip.io/md2html/`. It accepts a POST with your Markdown and returns clean HTML.
 
 #### cURL example
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/ \
+curl -X POST https://147.15.103.217.sslip.io/md2html/ \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello World\n\nThis is **bold** and *italic*."}'
 ```
@@ -120,7 +120,7 @@ curl -X POST http://147.15.103.217/md2html/ \
 import requests
 
 resp = requests.post(
-    "http://147.15.103.217/md2html/",
+    "https://147.15.103.217.sslip.io/md2html/",
     json={"markdown": "# Hello World\n\nThis is **bold** and *italic*."}
 )
 print(resp.json()["html"])
@@ -129,7 +129,7 @@ print(resp.json()["html"])
 #### JavaScript (fetch) example
 
 ```javascript
-const res = await fetch('http://147.15.103.217/md2html/', {
+const res = await fetch('https://147.15.103.217.sslip.io/md2html/', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ markdown: '# Hello World\n\nThis is **bold** and *italic*.' })
@@ -159,6 +159,6 @@ Source is open: [github.com/danielbenevides-ops/md2html-api](https://github.com/
 
 If you're prototyping, a client library is fine. If you're shipping a real app with user-generated Markdown across multiple platforms, a dedicated **markdown to html api** removes a whole class of problems — dependency management, sanitization, consistency, CPU cost — for the price of one HTTP call.
 
-Try it free at `http://147.15.103.217/md2html/`. No signup, no API key for light use. Fork the code at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api) if you want to self-host.
+Try it free at `https://147.15.103.217.sslip.io/md2html/`. No signup, no API key for light use. Fork the code at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api) if you want to self-host.
 
 Stop shipping parser bugs. Start shipping HTML.

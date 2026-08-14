@@ -1,6 +1,6 @@
 # API Directories & Marketplaces for MD2HTML API Listing
 
-> **Product:** MD2HTML API · http://147.15.103.217/md2html/ · 10 endpoints · $0.001/call (LTC) · zero-signup
+> **Product:** MD2HTML API · https://147.15.103.217.sslip.io/md2html/ · 10 endpoints · $0.001/call (LTC) · zero-signup
 > **Compiled:** 2026-08-09 · Method: primary-source verification via browser_navigate + GitHub Search API
 > **Goal:** List MD2HTML on 10 directories to drive developer discovery and first calls.
 
@@ -26,7 +26,7 @@ The five highest-leverage targets, ranked by audience reach and fit, are flagged
   1. Sign up at https://rapidapi.com/auth/sign-up (Google/GitHub/email).
   2. Complete email verification.
   3. Dashboard → "My APIs" → "Add New API" → enter name, short description, category.
-  4. Add the API base URL (http://147.15.103.217/md2html/) and define each of the 10 endpoints manually OR via OpenAPI import.
+  4. Add the API base URL (https://147.15.103.217.sslip.io/md2html/) and define each of the 10 endpoints manually OR via OpenAPI import.
   5. Configure endpoint params, response schema, and a sample test response.
   6. Set up pricing — Free tier (10 calls) + Pro tier at $0.001/call LTC. (Note: RapidAPI's billing rails are card/Stripe; LTC micropayments may require a workaround — consider accepting flat USD on RapidAPI, keeping LTC direct on your own site.)
   7. Set CORS + HTTPS (see "Blockers" below).
@@ -59,7 +59,7 @@ The five highest-leverage targets, ranked by audience reach and fit, are flagged
   3. Edit `README.md` — insert the MD2HTML row in the `Documents` (or `Development`) section in alphabetical order:
 
      ```
-     | [MD2HTML](http://147.15.103.217/md2html/) | Convert markdown to HTML via 10 server-side endpoints | apiKey | Yes | Yes |  |
+     | [MD2HTML](https://147.15.103.217.sslip.io/md2html/) | Convert markdown to HTML via 10 server-side endpoints | apiKey | Yes | Yes |  |
      ```
 
      (Drop the trailing " API" word — already complying with the rule.)
@@ -83,7 +83,7 @@ The five highest-leverage targets, ranked by audience reach and fit, are flagged
 - **Free vs paid listing:** **100% free**, no premium tier, no sponsorship. Run by Keenethics Labs as open source.
 - **Estimated traffic:** Modest but high-signal — developer/architect audience looking for production-ready REST APIs. ~4.2k stars on GitHub; monthly visits estimated in the low tens of thousands. Marginal SEO backlink value high (clean DA backlink from apis.guru).
 - **Submission steps:**
-  1. Author an **OpenAPI 3.x spec** for MD2HTML's 10 endpoints (you'll reuse this for RapidAPI too). Publish at e.g. `http://147.15.103.217/md2html/openapi.yaml` (use HTTPS post-cutover).
+  1. Publish the current HTTPS OpenAPI URL: `https://147.15.103.217.sslip.io/md2html/swagger.json`.
   2. Open https://apis.guru/add-api/.
   3. Paste the OpenAPI spec URL into `URL*`.
   4. Select "OpenAPI/Swagger".
@@ -214,7 +214,7 @@ The five highest-leverage targets, ranked by audience reach and fit, are flagged
      ```
      ### Documents & Productivity
      ...
-     - [MD2HTML](http://147.15.103.217/md2html/): Markdown-to-HTML renderer, 10 server-side endpoints, $0.001/call LTC.
+     - [MD2HTML](https://147.15.103.217.sslip.io/md2html/): Markdown-to-HTML renderer, 10 server-side endpoints, $0.001/call LTC.
      ```
 
   4. Squash commits, message e.g. "Add MD2HTML to Documents & Productivity".

@@ -4,7 +4,7 @@
 
 ## Observed contract
 
-- `GET http://147.15.103.217/md2html/health` returned `200`, version `1.4.0`, and **26** advertised routes.[1]
+- `GET https://147.15.103.217.sslip.io/md2html/health` returned `200`, version `1.4.0`, and **26** advertised routes.[1]
 - The live `swagger.json` returned OpenAPI `3.0.3`, version `1.4.0`, with **25** paths. Its path set is not identical to `/health`: it omits `/webhook/register` and `/webhook/test`, while `/health` does not count `/swagger.json`.[5]
 - The live usage guide presents `GET /register` as the no-body key-minting flow and says billed requests use `X-API-Key`; the live pricing response says 10 free calls, then `$0.001 USD` with `currency: LTC`, a 30/60-second rate limit, and a 1 MiB body cap.[6][7]
 
@@ -76,7 +76,7 @@ Use the precise promise: **10 free billable calls per IP or API key; after exhau
 
 ## Sources
 
-[1] http://147.15.103.217/md2html/health — MD2HTML live health endpoint
+[1] https://147.15.103.217.sslip.io/md2html/health — MD2HTML live health endpoint
 
 [2] https://raw.githubusercontent.com/public-apis/public-apis/master/CONTRIBUTING.md — public-apis current contributing guide
 
@@ -84,8 +84,8 @@ Use the precise promise: **10 free billable calls per IP or API key; after exhau
 
 [4] https://api.github.com/repos/public-apis/public-apis — public-apis GitHub repository metadata
 
-[5] http://147.15.103.217/md2html/swagger.json — MD2HTML live OpenAPI document
+[5] https://147.15.103.217.sslip.io/md2html/swagger.json — MD2HTML live OpenAPI document
 
-[6] http://147.15.103.217/md2html/docs — MD2HTML live usage guide
+[6] https://147.15.103.217.sslip.io/md2html/docs — MD2HTML live usage guide
 
-[7] http://147.15.103.217/md2html/pricing — MD2HTML live pricing endpoint
+[7] https://147.15.103.217.sslip.io/md2html/pricing — MD2HTML live pricing endpoint

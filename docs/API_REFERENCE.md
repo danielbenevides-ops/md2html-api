@@ -11,7 +11,7 @@ Set the API root once. The local server listens on `8777`; the public reverse-pr
 export BASE_URL=http://localhost:8777
 
 # Public instance (replace if your deployment differs)
-# export BASE_URL=http://147.15.103.217/md2html
+# export BASE_URL=https://147.15.103.217.sslip.io/md2html
 
 # Check the service
 curl "$BASE_URL/health"
@@ -166,7 +166,7 @@ curl "$BASE_URL/register"
 
 ```json
 {
-  "api_key": "mk_2ddf91574347ae032bea14f0b313555a",
+  "api_key": "mk_REPLACE_WITH_YOUR_KEY",
   "wallet_address": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
   "free_tier_limit": 10,
   "calls_made": 0,
@@ -724,7 +724,7 @@ curl "$BASE_URL/usage" -H "X-API-Key: $API_KEY"
 
 ```json
 {
-  "client": "mk_2ddf91574347ae032bea14f0b313555a",
+  "client": "mk_REPLACE_WITH_YOUR_KEY",
   "calls_made": 7,
   "free_tier_limit": 10,
   "remaining": 3

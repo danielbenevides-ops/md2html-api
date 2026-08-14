@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # healthcheck.sh — silent cron health monitor for the md2html API on the VPS.
 #
-#  1. Curls http://147.15.103.217/md2html/health (5s timeout).
+#  1. Curls https://147.15.103.217.sslip.io/md2html/health (5s timeout).
 #  2. On failure, SSHs into the VPS and restarts the server via deploy.sh.
 #  3. Appends a {ts, up, restarted} entry to uptime.json.
 #  4. Silent: no alerts, no stdout unless run manually with -v.

@@ -6,7 +6,7 @@ Every project that touches Markdown eventually asks the same question: *which to
 
 The five options compared here:
 
-1. **MD2HTML API** — a hosted, HTTP-based **markdown to html api** free for the first 10 calls at `http://147.15.103.217/md2html/`.
+1. **MD2HTML API** — a hosted, HTTP-based **markdown to html api** free for the first 10 calls at `https://147.15.103.217.sslip.io/md2html/`.
 2. **marked.js** — the most-installed client-side JavaScript parser.
 3. **markdown-it** — the configurable, CommonMark-compliant JavaScript parser.
 4. **Pandoc** — the Haskell-powered universal document converter.
@@ -49,7 +49,7 @@ You don't have to take the table on faith. The MD2HTML API is live right now:
 
 ```bash
 # Convert Markdown to HTML in one request
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello\n\nThis is **bold** and *italic*.\n\n- one\n- two"}'
 ```
@@ -70,14 +70,14 @@ No `npm install`, no 150 MB binary, no OAuth token. The first 10 calls are free;
 Without a key the API bills against your IP. Register for a stable key if you want to track usage separately:
 
 ```bash
-curl http://147.15.103.217/md2html/register
+curl https://147.15.103.217.sslip.io/md2html/register
 # {"api_key":"mk_...","wallet_address":"...","free_tier_limit":10,"calls_made":0,"remaining":10}
 ```
 
 Then send the key on every call:
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -H "X-API-Key: mk_YOUR_KEY_HERE" \
   -d '{"markdown": "# Hello **world**"}'
@@ -96,4 +96,4 @@ Use this short rule to pick from the table:
 
 There is no single best **markdown to html api** or library — there's the best fit for your constraints. The MD2HTML API is the option that trades a few milliseconds of network latency for zero install, zero bundle, server-side sanitization, and identical output across every runtime that speaks HTTP. For the growing set of apps that render Markdown in more than one place, that trade is the whole point.
 
-Try it free at <http://147.15.103.217/md2html/>. Source and self-host instructions are at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api).
+Try it free at <https://147.15.103.217.sslip.io/md2html/>. Source and self-host instructions are at [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api).

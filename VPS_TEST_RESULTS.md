@@ -1,6 +1,6 @@
 # MD2HTML API — External Endpoint Test Results
 
-**Base URL:** `http://147.15.103.217/md2html/`  
+**Base URL:** `https://147.15.103.217.sslip.io/md2html/`
 **Tested:** Friday, August 07, 2026  
 **Method:** curl from external host  
 
@@ -160,4 +160,4 @@ Rate limit: 30 requests/minute per IP. Max body: 1MB.
 
 ## Test Verdict
 
-✅ **All 7 endpoints operational externally.** The MD2HTML API at `http://147.15.103.217/md2html/` is fully live and responding correctly from an external host. Markdown→HTML conversion works, billing/usage tracking functions, and the landing page renders.
+✅ **All 7 endpoints operational externally.** The MD2HTML API at `https://147.15.103.217.sslip.io/md2html/` is fully live and responding correctly from an external host. Markdown→HTML conversion works, billing/usage tracking functions, and the landing page renders.

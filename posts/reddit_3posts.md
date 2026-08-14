@@ -1,6 +1,6 @@
 # Reddit Posts — MD2HTML API
 
-> 3 posts, each under 250 words, authentic tone. Live URL: http://147.15.103.217/md2html/ · GitHub: https://github.com/danielbenevides-ops/md2html-api
+> 3 posts, each under 250 words, authentic tone. Live URL: https://147.15.103.217.sslip.io/md2html/ · GitHub: https://github.com/danielbenevides-ops/md2html-api
 
 ---
 
@@ -13,7 +13,7 @@
 Been meaning to share this in the Saturday thread. I built **MD2HTML** — a REST API that takes raw Markdown and returns clean, styled HTML. One endpoint, no SDK, no signupwall.
 
 ```
-POST http://147.15.103.217/md2html/convert
+POST https://147.15.103.217.sslip.io/md2html/convert
 Body: your markdown → response: HTML
 ```
 
@@ -21,7 +21,7 @@ The angle that got me actually building it: existing converters are either paid 
 
 Stack is deliberately unsexy: Python stdlib `http.server`, no Flask/FastAPI, no database, file-based ledger. The whole thing is a few hundred lines and deploys with one SSH command. 10 endpoints total (convert, health, balance, deposit address, docs, etc.).
 
-It's live right now: **http://147.15.103.217/md2html/** — there's a playground on the docs page so you can try it without committing.
+It's live right now: **https://147.15.103.217.sslip.io/md2html/** — there's a playground on the docs page so you can try it without committing.
 
 Source is open: **https://github.com/danielbenevides-ops/md2html-api**
 
@@ -46,7 +46,7 @@ Why it fits here:
 - **It's yours.** You control the wallet keys, logging, rate limits. Run it beside your docs site.
 - 10 endpoints, few hundred lines, one SSH deploy.
 
-Live demo: **http://147.15.103.217/md2html/**
+Live demo: **https://147.15.103.217.sslip.io/md2html/**
 Self-host it: **https://github.com/danielbenevides-ops/md2html-api**
 
 Questions for the room:
@@ -74,7 +74,7 @@ Over the last week I used an AI agent to help build, test, document, and deploy 
 - Source, docs, SDKs, and distribution drafts
 
 **Current scoreboard:**
-- ✅ API live: http://147.15.103.217/md2html/
+- ✅ API live: https://147.15.103.217.sslip.io/md2html/
 - ✅ Source public: https://github.com/danielbenevides-ops/md2html-api
 - ✅ Payment watcher tested against a zero-balance address
 - ❌ Confirmed paying customers: 0

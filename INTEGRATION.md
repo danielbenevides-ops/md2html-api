@@ -1,6 +1,6 @@
 # Integration Guide — md2html LTC API
 
-**Base URL:** `http://147.15.103.217/md2html/`
+**Base URL:** `https://147.15.103.217.sslip.io/md2html/`
 **Currency:** Litecoin (LTC)
 **Wallet:** `Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG`
 **Free tier:** 10 calls per IP, then HTTP `402 Payment Required`.
@@ -14,13 +14,13 @@ Get an API key, make your first conversion, and track usage in three steps.
 **1. Register** — get a free API key:
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/register
+curl -X POST https://147.15.103.217.sslip.io/md2html/register
 ```
 
 **2. Convert** — markdown → HTML (replace `YOUR_KEY`):
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H 'X-API-Key: YOUR_KEY' \
   -H 'Content-Type: application/json' \
   -d '{"markdown": "# Hello"}'
@@ -29,14 +29,14 @@ curl -X POST http://147.15.103.217/md2html/convert \
 **3. Check usage** — see remaining calls:
 
 ```bash
-curl http://147.15.103.217/md2html/usage -H 'X-API-Key: YOUR_KEY'
+curl https://147.15.103.217.sslip.io/md2html/usage -H 'X-API-Key: YOUR_KEY'
 ```
 
 ### Python (requests)
 
 ```python
 import requests
-BASE = "http://147.15.103.217/md2html"
+BASE = "https://147.15.103.217.sslip.io/md2html"
 key = "YOUR_KEY"
 hdr = {"X-API-Key": key}
 
@@ -54,7 +54,7 @@ print(r.json())
 ### JavaScript (fetch)
 
 ```javascript
-const BASE = "http://147.15.103.217/md2html";
+const BASE = "https://147.15.103.217.sslip.io/md2html";
 const key = "YOUR_KEY";
 const hdr = { "X-API-Key": key };
 
@@ -83,7 +83,7 @@ console.log(usage);
 ```python
 import requests
 
-BASE = "http://147.15.103.217/md2html"
+BASE = "https://147.15.103.217.sslip.io/md2html"
 
 # --- Convert markdown to HTML ---
 r = requests.post(f"{BASE}/convert", json={"markdown": "# Hello **world**"})
@@ -115,7 +115,7 @@ html = call("convert", markdown="## Heading\n\nSome **bold** text.")
 ### JavaScript (fetch)
 
 ```javascript
-const BASE = "http://147.15.103.217/md2html";
+const BASE = "https://147.15.103.217.sslip.io/md2html";
 
 // --- Convert markdown to HTML ---
 const res = await fetch(`${BASE}/convert`, {
@@ -159,39 +159,39 @@ const result = await call("convert", { markdown: "## Heading\n\n**bold**" });
 
 ```bash
 # Convert markdown to HTML
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
      -H "Content-Type: application/json" \
      -d '{"markdown":"# Hello **world**"}'
 
 # Prettify JSON
-curl -X POST http://147.15.103.217/md2html/json/prettify \
+curl -X POST https://147.15.103.217.sslip.io/md2html/json/prettify \
      -H "Content-Type: application/json" \
      -d '{"json":"{\"b\":2,\"a\":1}"}'
 
 # Text statistics
-curl -X POST http://147.15.103.217/md2html/text/stats \
+curl -X POST https://147.15.103.217.sslip.io/md2html/text/stats \
      -H "Content-Type: application/json" \
      -d '{"text":"The quick brown fox jumps over the lazy dog."}'
 
 # Generate slug
-curl -X POST http://147.15.103.217/md2html/slug \
+curl -X POST https://147.15.103.217.sslip.io/md2html/slug \
      -H "Content-Type: application/json" \
      -d '{"text":"Hello World! My First Post"}'
 
 # Check API health
-curl http://147.15.103.217/md2html/health
+curl https://147.15.103.217.sslip.io/md2html/health
 
 # View API docs
-curl http://147.15.103.217/md2html/docs
+curl https://147.15.103.217.sslip.io/md2html/docs
 
 # Get payment info (wallet address)
-curl http://147.15.103.217/md2html/payment
+curl https://147.15.103.217.sslip.io/md2html/payment
 
 # Check your usage
-curl http://147.15.103.217/md2html/usage
+curl https://147.15.103.217.sslip.io/md2html/usage
 
 # Get server statistics
-curl http://147.15.103.217/md2html/stats
+curl https://147.15.103.217.sslip.io/md2html/stats
 ```
 
 ---
@@ -204,7 +204,7 @@ Returns server status. Not billed.
 
 **curl:**
 ```bash
-curl http://147.15.103.217/md2html/health
+curl https://147.15.103.217.sslip.io/md2html/health
 ```
 **Response:**
 ```json
@@ -223,7 +223,7 @@ Converts Markdown text to styled HTML. Billed per call.
 
 **curl:**
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
      -H "Content-Type: application/json" \
      -d '{"markdown":"# Title\n\nSome **bold** and *italic* text."}'
 ```
@@ -261,7 +261,7 @@ Pretty-prints / reformats a JSON string with sorted keys.
 
 **curl:**
 ```bash
-curl -X POST http://147.15.103.217/md2html/json/prettify \
+curl -X POST https://147.15.103.217.sslip.io/md2html/json/prettify \
      -H "Content-Type: application/json" \
      -d '{"json":"{\"b\":2,\"a\":1}"}'
 ```
@@ -296,7 +296,7 @@ Returns word count, character count, sentence count, and reading-time estimate.
 
 **curl:**
 ```bash
-curl -X POST http://147.15.103.217/md2html/text/stats \
+curl -X POST https://147.15.103.217.sslip.io/md2html/text/stats \
      -H "Content-Type: application/json" \
      -d '{"text":"The quick brown fox jumps over the lazy dog."}'
 ```
@@ -336,7 +336,7 @@ Converts text to a URL-safe slug.
 
 **curl:**
 ```bash
-curl -X POST http://147.15.103.217/md2html/slug \
+curl -X POST https://147.15.103.217.sslip.io/md2html/slug \
      -H "Content-Type: application/json" \
      -d '{"text":"Hello World! My First Post"}'
 ```
@@ -367,7 +367,7 @@ Returns this documentation as JSON/HTML. Not billed.
 
 **curl:**
 ```bash
-curl http://147.15.103.217/md2html/docs
+curl https://147.15.103.217.sslip.io/md2html/docs
 ```
 **Python:**
 ```python
@@ -388,7 +388,7 @@ Returns the LTC wallet address and payment instructions. Not billed.
 
 **curl:**
 ```bash
-curl http://147.15.103.217/md2html/payment
+curl https://147.15.103.217.sslip.io/md2html/payment
 ```
 **Python:**
 ```python
@@ -417,7 +417,7 @@ Returns your IP's call count and remaining free calls. Not billed.
 
 **curl:**
 ```bash
-curl http://147.15.103.217/md2html/usage
+curl https://147.15.103.217.sslip.io/md2html/usage
 ```
 **Python:**
 ```python
@@ -447,7 +447,7 @@ Returns aggregate server statistics (total calls, unique clients, uptime). Not b
 
 **curl:**
 ```bash
-curl http://147.15.103.217/md2html/stats
+curl https://147.15.103.217.sslip.io/md2html/stats
 ```
 **Python:**
 ```python

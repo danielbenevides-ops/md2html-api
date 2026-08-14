@@ -1,6 +1,6 @@
 # Crypto Micropayments for Developer APIs: A Litecoin (LTC) Integration Guide
 
-> **Summary:** Why Litecoin is the right rail for per-request API billing and how to integrate LTC payments with the [MD2HTML](http://147.15.103.217/md2html/) API in under 50 lines of Python.
+> **Summary:** Why Litecoin is the right rail for per-request API billing and how to integrate LTC payments with the [MD2HTML](https://147.15.103.217.sslip.io/md2html/) API in under 50 lines of Python.
 
 Traditional API billing breaks for high-volume micro-services. Stripe's minimum chargeable transaction is ~$0.30 + 2.9%, so a $0.001 conversion is mathematically unbillable. Subscription tiers paper over this — you pay $20/month whether you use 100 calls or 100,000 — but they optimize for the vendor's predictability, not the user's wallet.
 
@@ -32,7 +32,7 @@ The simplest reliable pattern is a **pre-funded channel**:
 3. Every API call debits the on-file balance by the per-request cost
 4. When balance runs low, user tops up again
 
-No per-request on-chain transaction is needed — the chain is only the top-up rail. This is exactly how the [MD2HTML API](http://147.15.103.217/md2html/) handles LTC billing.
+No per-request on-chain transaction is needed — the chain is only the top-up rail. This is exactly how the [MD2HTML API](https://147.15.103.217.sslip.io/md2html/) handles LTC billing.
 
 ---
 
@@ -43,7 +43,7 @@ No per-request on-chain transaction is needed — the chain is only the top-up r
 ```python
 import requests
 
-MD2HTML_URL = "http://147.15.103.217/md2html"
+MD2HTML_URL = "https://147.15.103.217.sslip.io/md2html"
 ch = requests.post(f"{MD2HTML_URL}/api/channel", json={"currency": "LTC"}).json()
 print(ch["deposit_address"])
 # ltc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
@@ -120,9 +120,9 @@ Card-network minimum fees make true per-request billing for sub-cent services un
 
 ## Next Steps
 
-- Get a funded channel at the [MD2HTML endpoint](http://147.15.103.217/md2html/)
-- Compare per-request costs in our [API comparison 2026](http://147.15.103.217/md2html/)
-- Walk through the full Python workflow in the [Markdown-to-HTML Python guide](http://147.15.103.217/md2html/)
+- Get a funded channel at the [MD2HTML endpoint](https://147.15.103.217.sslip.io/md2html/)
+- Compare per-request costs in our [API comparison 2026](https://147.15.103.217.sslip.io/md2html/)
+- Walk through the full Python workflow in the [Markdown-to-HTML Python guide](https://147.15.103.217.sslip.io/md2html/)
 
 For developer APIs, Litecoin micropayments are already the cheapest metered billing rail available. Low fees, fast finality, global reach — they make the long tail of sub-cent services finally billable.
 

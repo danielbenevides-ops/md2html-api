@@ -1,6 +1,6 @@
 <?php
 // MD2HTML API examples: /convert and /slug endpoints
-const BASE_URL = 'http://147.15.103.217/md2html';
+const BASE_URL = 'https://147.15.103.217.sslip.io/md2html';
 const API_KEY = 'YOUR_LTC_API_KEY'; // LTC address used as API key
 
 // Helper: POST JSON and return decoded response array

@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "description": "Node.js SDK (fetch-based, zero deps) for the MD2HTML Markdown-to-HTML micropayment API.",
   "main": "md2html-client.js",
-  "homepage": "http://147.15.103.217/md2html/",
+  "homepage": "https://147.15.103.217.sslip.io/md2html/",
   "license": "MIT",
   "author": "danielbenevides-ops",
   "engines": {

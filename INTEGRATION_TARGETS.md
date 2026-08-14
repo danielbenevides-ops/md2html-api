@@ -1,6 +1,6 @@
 # MD2HTML API Integration Targets
 
-Research of 15 open-source projects that could integrate the **MD2HTML API** (http://147.15.103.217/md2html/, 10 endpoints) as an external markdown-rendering service.
+Research of 15 open-source projects that could integrate the **MD2HTML API** (https://147.15.103.217.sslip.io/md2html/, 10 endpoints) as an external markdown-rendering service.
 
 Star counts fetched via the GitHub REST API on **2026-08-09**. Potential contacts are the top contributors by commit count (bots excluded); GitHub usernames link to profiles where real names were unavailable.
 
@@ -341,4 +341,4 @@ AFFiNE stores content as a block document model and supports markdown import/exp
 - **GitHub rate limits:** the unauthenticated API caps at 60 requests/hour/IP. A few user-profile lookups (real names for `parkr`, `spf13`, `squidfunk`, `slorber`, `oprypin`, `waylan`, `yyx990803`, `matthewp`, `zachleat`, `tiensonqin`, `soupette`, etc.) were blocked by rate-limit; those are cited by GitHub handle with direct profile link.
 - **11ty rename:** the `11ty/eleventy` repo has been renamed/migrated; the canonical repo is now `11ty/buildawesome` (the popular `eleventy` name redirects there). Both names are used in the OSS community.
 - **License diversity:** integrations in AGPL projects (Logseq, SiYuan) and enterprise-dual-licensed CMS (Strapi, AFFiNE, TinaCMS) may have additional compatibility/contract considerations for a hosted API plugin — confirm with maintainers.
-- **Self-hosted API note:** the MD2HTML API at http://147.15.103.217/md2html/ is HTTP (not HTTPS). Projects that publish plugins referencing an external API will typically want an HTTPS endpoint or a self-hostable wrapper; worth raising in outreach.
+- **HTTPS endpoint:** the MD2HTML API at https://147.15.103.217.sslip.io/md2html/ uses a valid Let's Encrypt certificate and is suitable for integrations that require TLS.

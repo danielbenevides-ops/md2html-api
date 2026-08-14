@@ -11,7 +11,7 @@ cover_image: ""
 
 MD2HTML API is an HTTP service for converting Markdown to HTML and running related developer utilities. The public source is on GitHub, and the live service is available at:
 
-- **API:** <http://147.15.103.217/md2html/>
+- **API:** <https://147.15.103.217.sslip.io/md2html/>
 - **Repository:** <https://github.com/danielbenevides-ops/md2html-api>
 
 This is a project description and usage guide—not a claim about customer adoption, uptime guarantees, or performance benchmarks.
@@ -21,7 +21,7 @@ This is a project description and usage guide—not a claim about customer adopt
 The conversion endpoint accepts JSON. A basic request is:
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H 'Content-Type: application/json' \
   -d '{"markdown":"# Hello **world**\n\n- one\n- two"}'
 ```
@@ -73,5 +73,5 @@ For a script, CI job, documentation pipeline, or small internal tool, an HTTP bo
 
 No third-party quotes or adoption figures are included because they are not needed to try the API. If you use it, evaluate the output and the repository for yourself.
 
-**Live API:** <http://147.15.103.217/md2html/>  
+**Live API:** <https://147.15.103.217.sslip.io/md2html/>
 **Source:** <https://github.com/danielbenevides-ops/md2html-api>

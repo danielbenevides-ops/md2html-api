@@ -1,6 +1,6 @@
 # md2html-api
 
-A tiny, zero-dependency **Node.js SDK** for the [MD2HTML API](http://147.15.103.217/md2html/) — a Markdown-to-HTML micropayment service that bills per call in Litecoin.
+A tiny, zero-dependency **Node.js SDK** for the [MD2HTML API](https://147.15.103.217.sslip.io/md2html/) — a Markdown-to-HTML micropayment service that bills per call in Litecoin.
 
 - ✨ **Zero dependencies** — uses the global `fetch` built into Node.js 18+
 - 🧩 Conversion, utility, usage, payment, and claim methods in one `MD2HTMLClient`
@@ -45,7 +45,7 @@ const { MD2HTMLClient } = require('md2html-api');
 
 const client = new MD2HTMLClient({
   apiKey: 'mk_your_api_key',   // optional; omit for IP-based billing
-  // baseUrl: 'http://147.15.103.217/md2html',  // optional override
+  // baseUrl: 'https://147.15.103.217.sslip.io/md2html',  // optional override
   // timeoutMs: 30000,                          // optional (default 30s)
 });
 

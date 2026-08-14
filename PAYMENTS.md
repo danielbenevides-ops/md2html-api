@@ -72,9 +72,9 @@ The hosted API uses a fixed package rather than a volatile USD conversion:
 - A txid already claimed by another key returns `409 Conflict`.
 
 ```bash
-curl http://147.15.103.217/md2html/register
+curl https://147.15.103.217.sslip.io/md2html/register
 
-curl -X POST http://147.15.103.217/md2html/payment/claim \
+curl -X POST https://147.15.103.217.sslip.io/md2html/payment/claim \
   -H 'Content-Type: application/json' \
   -H 'X-API-Key: ***' \
   -d '{"txid":"<64-hex-litecoin-txid>"}'

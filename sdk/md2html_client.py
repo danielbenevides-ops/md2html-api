@@ -13,7 +13,7 @@ import urllib.request
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 __version__ = "0.2.0"
-DEFAULT_BASE_URL = "http://147.15.103.217/md2html"
+DEFAULT_BASE_URL = "https://147.15.103.217.sslip.io/md2html"
 
 
 class Md2HTMLAPIError(RuntimeError):

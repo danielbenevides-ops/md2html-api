@@ -1,7 +1,7 @@
 # Market Research v2 — MD2HTML API
 
 > Markdown-to-HTML conversion API · $0.001/call · LTC crypto-native · zero-signup
-> Live: http://147.15.103.217/md2html/ · Open source: github.com/danielbenevides-ops/md2html-api
+> Live: https://147.15.103.217.sslip.io/md2html/ · Open source: github.com/danielbenevides-ops/md2html-api
 > Compiled: 2026-08-08 · Supersedes MARKET_RESEARCH.md (adds competitor count + channel playbook)
 
 ---

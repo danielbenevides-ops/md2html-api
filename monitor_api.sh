@@ -1,6 +1,6 @@
 #!/bin/bash
 # Monitor MD2HTML API - checks health and reports
-API="http://147.15.103.217/md2html/health"
+API="https://147.15.103.217.sslip.io/md2html/health"
 RESULT=$(curl -s --max-time 8 "$API" 2>/dev/null)
 if [ -z "$RESULT" ]; then
   echo "ALERT: API DOWN at $(date)"

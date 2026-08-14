@@ -8,7 +8,7 @@ status: draft
 
 ### *From $0 to $1 MRR — shipping a pay-per-call Markdown API in public*
 
-This series documents the full journey of building **MD2HTML API** — a 10-endpoint Markdown processing service with crypto payments, rate limiting, and API-key auth — using AI-assisted development throughout. Live at `http://147.15.103.217/md2html/`.
+This series documents the full journey of building **MD2HTML API** — a 10-endpoint Markdown processing service with crypto payments, rate limiting, and API-key auth — using AI-assisted development throughout. Live at `https://147.15.103.217.sslip.io/md2html/`.
 
 **Target audience:** Indie hackers, side-project builders, and developers curious about shipping a real paid API with modern tooling.
 
@@ -201,7 +201,7 @@ async def playground(slug: str, request: Request):
 - [ ] Cross-post each part to Dev.to with `canonical_url` set to the blog original (avoids duplicate-content SEO penalty on Dev.to)
 - [ ] Add series cover image 1200×675, generated via Flux or hand-designed in Figma
 - [ ] End each part with a "Next in this series" link to the next published article
-- [ ] Include call-to-action: "MD2HTML API is live at http://147.15.103.217/md2html/ — first 100 calls free"
+- [ ] Include call-to-action: "MD2HTML API is live at https://147.15.103.217.sslip.io/md2html/ — first 100 calls free"
 - [ ] Drop GitHub stars link: github.com/pqcai/md2html-api
 - [ ] Add embedded API playground widget on the Dev.to posts (using the markdown → HTML endpoint itself)
 - [ ] Set Dev.to tags exactly as listed above to match Dev.to tag taxonomy

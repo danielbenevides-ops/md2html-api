@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="canonical" href="http://147.15.103.217/md2html/">
+<link rel="canonical" href="https://147.15.103.217.sslip.io/md2html/">
 <meta name="robots" content="index,follow">
-<link rel="alternate" type="application/json" href="http://147.15.103.217/md2html/swagger.json" title="OpenAPI 3.0 specification">
+<link rel="alternate" type="application/json" href="https://147.15.103.217.sslip.io/md2html/swagger.json" title="OpenAPI 3.0 specification">
 
 <!-- Primary Meta Tags -->
 <title>MD2HTML API — Convert Markdown to HTML via API</title>
@@ -14,7 +14,7 @@
 
 <!-- Open Graph / Social -->
 <meta property="og:type" content="website">
-<meta property="og:url" content="http://147.15.103.217/md2html/">
+<meta property="og:url" content="https://147.15.103.217.sslip.io/md2html/">
 <meta property="og:title" content="MD2HTML API — Convert Markdown to HTML via API">
 <meta property="og:description" content="A simple, fast API that converts Markdown to clean HTML. 10 free calls, then 100-call Litecoin packages — no subscriptions or cards.">
 <meta name="twitter:card" content="summary">
@@ -27,7 +27,7 @@
   "@context": "https://schema.org",
   "@type": "WebApplication",
   "name": "MD2HTML API",
-  "url": "http://147.15.103.217/md2html/",
+  "url": "https://147.15.103.217.sslip.io/md2html/",
   "description": "Convert Markdown to HTML via API. 10 free calls, then fixed prepaid packages of 100 calls for 0.001 LTC — no subscriptions or cards.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
@@ -142,6 +142,19 @@
   .ratelimit strong { color: var(--warn); }
   .ratelimit code { font-family: var(--mono); color: var(--text); background: rgba(255,255,255,0.06); padding: 0.05rem 0.3rem; border-radius: 3px; }
 
+  /* --- Copy buttons for code blocks --- */
+  pre { position: relative; }
+  .copy-btn {
+    position: absolute; top: 0.5rem; right: 0.5rem;
+    background: var(--bg); color: var(--muted);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.22rem 0.55rem; font-size: 0.72rem; font-family: inherit;
+    cursor: pointer; opacity: 0; transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+  }
+  pre:hover .copy-btn, .copy-btn:focus { opacity: 1; }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .copy-btn.copied { color: var(--ltc); border-color: var(--ltc); }
+
   /* --- Live Demo --- */
   .demo {
     display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: stretch;
@@ -230,7 +243,7 @@
     <main id="main-content" aria-labelledby="page-title">
     <h1 id="page-title"><span class="accent">MD2HTML</span> API</h1>
     <p class="tagline">Convert Markdown to HTML via API. <em>Simple. Fast. Crypto-micropay.</em></p>
-    <p class="hint"><strong>Developer docs:</strong> <a href="http://147.15.103.217/md2html/docs" style="color:var(--accent)">API usage guide</a> &nbsp;·&nbsp; <a href="http://147.15.103.217/md2html/swagger.json" style="color:var(--accent)">OpenAPI 3.0 specification</a></p>
+    <p class="hint"><strong>Developer docs:</strong> <a href="https://147.15.103.217.sslip.io/md2html/docs" style="color:var(--accent)">API usage guide</a> &nbsp;·&nbsp; <a href="https://147.15.103.217.sslip.io/md2html/swagger.json" style="color:var(--accent)">OpenAPI 3.0 specification</a></p>
 
     <section>
       <h2>Live Demo</h2>
@@ -256,7 +269,7 @@ Type here, then hit Convert.</textarea>
           <div class="output" id="htmlOutput" role="region" aria-live="polite" aria-label="Rendered HTML output"></div>
         </div>
       </div>
-      <p class="hint">Conversion hits <code class="path">POST http://147.15.103.217/md2html/convert</code> in real time. First 10 calls are free.</p>
+      <p class="hint">Conversion hits <code class="path">POST https://147.15.103.217.sslip.io/md2html/convert</code> in real time. First 10 calls are free.</p>
     </section>
 
     <section>
@@ -288,7 +301,7 @@ Type here, then hit Convert.</textarea>
     <section>
       <h2>Quick Start</h2>
     <pre><span class="cmt"># Convert markdown to HTML in one request</span>
-    <span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">http://147.15.103.217/md2html/convert</span> <span class="str">\\</span>
+    <span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">https://147.15.103.217.sslip.io/md2html/convert</span> <span class="str">\\</span>
       <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\\</span>
       <span class="flag">-d</span> <span class="str">'{"markdown": "# Hello\\n**World** & *go*"}'</span>
 
@@ -301,31 +314,31 @@ Type here, then hit Convert.</textarea>
       <div class="endpoint">
         <h3><span class="method post">POST</span><code>/convert</code></h3>
         <p>Convert a Markdown document to HTML. Body: <code>{"markdown": "..."}</code>. Returns <code>{"html": "..."}</code>.</p>
-<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">http://147.15.103.217/md2html/convert</span> <span class="str">\\</span>
+<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">https://147.15.103.217.sslip.io/md2html/convert</span> <span class="str">\\</span>
   <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\\</span>
   <span class="flag">-d</span> <span class="str">'{"markdown": "# Title\\nText."}'</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/health</code></h3>
         <p>Liveness probe. Returns service uptime and status JSON. No auth required.</p>
-<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/health</span>
+<pre><span class="cmd">curl</span> <span class="str">https://147.15.103.217.sslip.io/md2html/health</span>
 <span class="cmt"># {"status":"ok","uptime":4321}</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/docs</code></h3>
-        <p>Plain-text API usage guide with request and response examples for the live v1.5.0 service. <a href="http://147.15.103.217/md2html/docs" style="color:var(--accent)">Read the API docs</a>.</p>
+        <p>Plain-text API usage guide with request and response examples for the live v1.5.0 service. <a href="https://147.15.103.217.sslip.io/md2html/docs" style="color:var(--accent)">Read the API docs</a>.</p>
 <pre><span class="cmt"># open in a browser</span>
-<span class="str">http://147.15.103.217/md2html/docs</span></pre>
+<span class="str">https://147.15.103.217.sslip.io/md2html/docs</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/payment</code></h3>
         <p>Returns the Litecoin wallet, fixed package size, included calls, confirmation requirement, and claim endpoint.</p>
-<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/payment</span></pre>
+<pre><span class="cmd">curl</span> <span class="str">https://147.15.103.217.sslip.io/md2html/payment</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method post">POST</span><code>/payment/claim</code></h3>
         <p>Verify a confirmed Litecoin txid and credit prepaid calls to the API key in <code>X-API-Key</code>.</p>
-<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">http://147.15.103.217/md2html/payment/claim</span> <span class="str">\\</span>
+<pre><span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">https://147.15.103.217.sslip.io/md2html/payment/claim</span> <span class="str">\\</span>
   <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\\</span>
   <span class="flag">-H</span> <span class="str">"X-API-Key: ***"</span> <span class="str">\\</span>
   <span class="flag">-d</span> <span class="str">'{"txid":"&lt;64-hex-txid&gt;"}'</span></pre>
@@ -333,19 +346,19 @@ Type here, then hit Convert.</textarea>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/usage</code></h3>
         <p>Current month's call count and remaining free quota. Returns balance JSON.</p>
-<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/usage</span>
+<pre><span class="cmd">curl</span> <span class="str">https://147.15.103.217.sslip.io/md2html/usage</span>
 <span class="cmt"># {"calls_made":7,"free_tier_limit":10,"remaining":3}</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/stats</code></h3>
         <p>Aggregate service metrics: total calls, unique clients, per-endpoint and status counts, potential conversions, and average latency. Public, read-only.</p>
-<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/stats</span>
+<pre><span class="cmd">curl</span> <span class="str">https://147.15.103.217.sslip.io/md2html/stats</span>
 <span class="cmt"># {"total_calls":12340,"unique_ips":42,"calls_by_endpoint":{}}</span></pre>
       </div>
       <div class="endpoint">
         <h3><span class="method get">GET</span><code>/swagger.json</code></h3>
-        <p>Machine-readable OpenAPI 3.0 specification for integrating the live API. <a href="http://147.15.103.217/md2html/swagger.json" style="color:var(--accent)">View the OpenAPI spec</a>.</p>
-<pre><span class="cmd">curl</span> <span class="str">http://147.15.103.217/md2html/swagger.json</span></pre>
+        <p>Machine-readable OpenAPI 3.0 specification for integrating the live API. <a href="https://147.15.103.217.sslip.io/md2html/swagger.json" style="color:var(--accent)">View the OpenAPI spec</a>.</p>
+<pre><span class="cmd">curl</span> <span class="str">https://147.15.103.217.sslip.io/md2html/swagger.json</span></pre>
       </div>
     </section>
 
@@ -422,7 +435,7 @@ Type here, then hit Convert.</textarea>
 
 <script>
   (function () {
-    const API = "http://147.15.103.217/md2html";
+    const API = "https://147.15.103.217.sslip.io/md2html";
     const mdInput   = document.getElementById("mdInput");
     const htmlOut   = document.getElementById("htmlOutput");
     const statusEl  = document.getElementById("demoStatus");
@@ -513,6 +526,34 @@ Type here, then hit Convert.</textarea>
         window.getSelection().removeAllRanges();
         window.getSelection().addRange(r);
       }
+    });
+
+    // Copy-to-clipboard buttons for every code example (reduces integration friction)
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    document.querySelectorAll("pre").forEach(function (pre) {
+      const code = pre.innerText;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "copy-btn";
+      btn.textContent = "Copy";
+      btn.setAttribute("aria-label", "Copy code to clipboard");
+      btn.addEventListener("click", function () {
+        const done = function () {
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(done).catch(function () { fallbackCopy(code); done(); });
+        } else { fallbackCopy(code); done(); }
+      });
+      pre.appendChild(btn);
     });
   })();
 </script>

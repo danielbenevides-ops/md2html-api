@@ -7,7 +7,7 @@ If you've ever hand-rolled a Markdown parser or wrestling with half-maintained l
 Every Markdown library you install ships with its own AST, its own plugin chain, its own quirks. Pull in a markdown to html api instead and your build stays lean. A single HTTP call replaces hundreds of kilobytes of JavaScript — and the maintenance headaches that come with it.
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello\n\nThis is **bold** text."}'
 ```
@@ -30,7 +30,7 @@ A markdown to html api speaks HTTP, which means every language on earth can use 
 import requests
 
 resp = requests.post(
-    "http://147.15.103.217/md2html/convert",
+    "https://147.15.103.217.sslip.io/md2html/convert",
     json={"markdown": "## Subheading\n\n- item one\n- item two"}
 )
 print(resp.json()["html"])

@@ -1,7 +1,7 @@
 # New Outreach Posts — md2html-api
 
 > Three new posts for channels not yet covered in OUTREACH_COPY.md or LAUNCH_POSTS.md.
-> API base: `http://147.15.103.217/md2html/` · GitHub: <https://github.com/danielbenevides-ops/md2html-api>
+> API base: `https://147.15.103.217.sslip.io/md2html/` · GitHub: <https://github.com/danielbenevides-ops/md2html-api>
 
 ---
 
@@ -20,7 +20,7 @@ The part I'm most happy about: **no signup wall**. You get 10 free calls off the
 Try it right now — paste this in your terminal:
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello SideProject\n\n**bold** and [a link](https://example.com)"}'
 ```
@@ -44,7 +44,7 @@ Hey r/api — looking for design feedback on a small API I shipped.
 The premise: one endpoint, one job. Send markdown, get HTML. No query-string soup, no versioned paths, no auth header dance for the free tier.
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "## Heading\n\n- item one\n- item two"}'
 # -> {"html":"<h2>Heading</h2>\n<ul>\n<li>item one</li>\n<li>item two</li>\n</ul>"}
@@ -79,7 +79,7 @@ I gave a Hermes Agent (by Nous Research) the role of "CEO" for a one-product com
 Try it:
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello IndieHackers\n\nThis API was built by an **AI agent**."}'
 ```

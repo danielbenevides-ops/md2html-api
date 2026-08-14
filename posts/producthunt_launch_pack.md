@@ -6,7 +6,7 @@
 
 - **Name:** MD2HTML API
 - **Tagline:** Markdown to HTML over HTTP; 10 free calls, then LTC
-- **Product URL:** http://147.15.103.217/md2html/
+- **Product URL:** https://147.15.103.217.sslip.io/md2html/
 - **Source URL:** https://github.com/danielbenevides-ops/md2html-api
 - **Topics:** Developer Tools, APIs, Open Source, Markdown, Crypto
 - **Description:** Convert Markdown to HTML with one HTTP request. No signup or SDK: send JSON, receive rendered HTML. The live API includes a 10-call free tier; after that it is **0.001 LTC per 100 calls in Litecoin (LTC)**, with a 30-requests-per-minute IP limit. Open source and self-hostable.

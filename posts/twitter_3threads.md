@@ -10,21 +10,21 @@
 MD2HTML API: a small HTTP service that converts Markdown to HTML. 📄➡️🌐
 
 Try the live service:
-http://147.15.103.217/md2html/
+https://147.15.103.217.sslip.io/md2html/
 
 Here are the verified API details 👇🧵
 
 **2/7**
 The conversion route is:
 
-POST http://147.15.103.217/md2html/convert
+POST https://147.15.103.217.sslip.io/md2html/convert
 
 Send Markdown as JSON, for example `{"markdown":"# Hello **world**"}`, and the service returns HTML in JSON.
 
 **3/7**
 The live health endpoint reports version `v1.5.0`:
 
-http://147.15.103.217/md2html/health
+https://147.15.103.217.sslip.io/md2html/health
 
 Source code and project documentation:
 https://github.com/danielbenevides-ops/md2html-api
@@ -37,18 +37,18 @@ The pricing model is pay-per-call:
 • Payment currency: LTC
 
 Current pricing details:
-http://147.15.103.217/md2html/pricing
+https://147.15.103.217.sslip.io/md2html/pricing
 
 **5/7**
 The documented request limit is 30 requests per minute.
 
 Read the live usage guide before integrating:
-http://147.15.103.217/md2html/docs
+https://147.15.103.217.sslip.io/md2html/docs
 
 **6/7**
 Quick test with curl:
 
-`curl -X POST http://147.15.103.217/md2html/convert -H 'Content-Type: application/json' -d '{"markdown":"# Hello"}'`
+`curl -X POST https://147.15.103.217.sslip.io/md2html/convert -H 'Content-Type: application/json' -d '{"markdown":"# Hello"}'`
 
 Use the docs to confirm the response shape.
 
@@ -56,7 +56,7 @@ Use the docs to confirm the response shape.
 MD2HTML is an option for developers looking for a focused Markdown-to-HTML HTTP endpoint with a free allowance and pay-per-call LTC pricing.
 
 Evaluate it here:
-http://147.15.103.217/md2html/
+https://147.15.103.217.sslip.io/md2html/
 
 ---
 
@@ -70,12 +70,12 @@ You can try MD2HTML with a plain HTTP request:
 3. Read the returned HTML JSON
 
 Live base URL:
-http://147.15.103.217/md2html/
+https://147.15.103.217.sslip.io/md2html/
 
 **2/5**
 A documented request looks like this:
 
-`curl -X POST http://147.15.103.217/md2html/convert -H 'Content-Type: application/json' -d '{"markdown":"# Hello **world**"}'`
+`curl -X POST https://147.15.103.217.sslip.io/md2html/convert -H 'Content-Type: application/json' -d '{"markdown":"# Hello **world**"}'`
 
 The service also documents raw `text/plain` Markdown input.
 
@@ -89,7 +89,7 @@ The conversion docs cover common Markdown such as:
 • Unordered lists
 
 Full reference:
-http://147.15.103.217/md2html/docs
+https://147.15.103.217.sslip.io/md2html/docs
 
 **4/5**
 Integration details to account for:
@@ -119,7 +119,7 @@ MD2HTML uses a simple published allowance:
 • LTC is the payment currency
 
 Pricing endpoint:
-http://147.15.103.217/md2html/pricing
+https://147.15.103.217.sslip.io/md2html/pricing
 
 **2/5**
 The live service documents a limit of 30 requests per minute.
@@ -127,21 +127,21 @@ The live service documents a limit of 30 requests per minute.
 That matters when adding a client: keep requests within the published window and handle rate-limit responses explicitly.
 
 Usage guide:
-http://147.15.103.217/md2html/docs
+https://147.15.103.217.sslip.io/md2html/docs
 
 **3/5**
 For conversion, send a POST request to:
 
-http://147.15.103.217/md2html/convert
+https://147.15.103.217.sslip.io/md2html/convert
 
 The first 10 billable calls are free. After that allowance is exhausted, billed POST requests return payment-required information.
 
 **4/5**
 For current service and billing details, use the public endpoints directly:
 
-Health: http://147.15.103.217/md2html/health
-Pricing: http://147.15.103.217/md2html/pricing
-Payment: http://147.15.103.217/md2html/payment
+Health: https://147.15.103.217.sslip.io/md2html/health
+Pricing: https://147.15.103.217.sslip.io/md2html/pricing
+Payment: https://147.15.103.217.sslip.io/md2html/payment
 
 **5/5**
 Project source:

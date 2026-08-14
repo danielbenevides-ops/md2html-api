@@ -8,7 +8,7 @@ Hi [Name],
 
 Thanks for opting in to MD2HTML updates. MD2HTML v1.4.0 converts Markdown to HTML through one request:
 
-`POST http://147.15.103.217/md2html/convert`
+`POST https://147.15.103.217.sslip.io/md2html/convert`
 
 You get 10 free calls, then pay $0.001 USD per call in Litecoin (LTC). Source and docs: https://github.com/danielbenevides-ops/md2html-api
 

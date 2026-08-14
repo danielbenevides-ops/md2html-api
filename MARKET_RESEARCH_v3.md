@@ -1,7 +1,7 @@
 # Market Research v3 — MD2HTML API: 5 Developer Use Cases That Pay
 
 > Markdown-to-HTML API · $0.001/call · LTC crypto-native · zero-signup
-> Live: http://147.15.103.217/md2html/ · OSS: github.com/danielbenevides-ops/md2html-api
+> Live: https://147.15.103.217.sslip.io/md2html/ · OSS: github.com/danielbenevides-ops/md2html-api
 > Compiled 2026-08-08 · Supersedes v2 (productizes findings into 5 sellable use cases)
 > Method: primary-source — npm download counts (api.npmjs.org), GitHub repo search (api.github.com), Stack Overflow (api.stackexchange.com), OpenAI community + Ghost developer forums.
 

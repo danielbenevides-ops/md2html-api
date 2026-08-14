@@ -1,8 +1,8 @@
 # Converting Markdown to HTML in Python: A Hands-On Guide (2026)
 
-> **Summary:** Three ways to convert Markdown to HTML in Python — `markdown` library, `mistune`, and the hosted [MD2HTML](http://147.15.103.217/md2html/) API for production pipelines — with copy-paste code for each.
+> **Summary:** Three ways to convert Markdown to HTML in Python — `markdown` library, `mistune`, and the hosted [MD2HTML](https://147.15.103.217.sslip.io/md2html/) API for production pipelines — with copy-paste code for each.
 
-Python is still the go-to language for content pipelines: static-site generators, blog engines, documentation tooling, RSS-to-HTML scrapers, and ingestion workers all need Markdown-to-HTML conversion. This guide walks through three practical approaches, weighs their trade-offs, and shows when to reach for a hosted API like [MD2HTML](http://147.15.103.217/md2html/).
+Python is still the go-to language for content pipelines: static-site generators, blog engines, documentation tooling, RSS-to-HTML scrapers, and ingestion workers all need Markdown-to-HTML conversion. This guide walks through three practical approaches, weighs their trade-offs, and shows when to reach for a hosted API like [MD2HTML](https://147.15.103.217.sslip.io/md2html/).
 
 ---
 
@@ -86,7 +86,7 @@ The trade-off: a smaller extension ecosystem than `markdown`.
 
 ## Approach 3: The MD2HTML API (Production)
 
-When you need GFM extensions, syntax highlighting, math support, and consistent output across services — without owning CPU/MEM cost or fight-with-libraries bugs — the [MD2HTML API](http://147.15.103.217/md2html/) is the simplest production choice.
+When you need GFM extensions, syntax highlighting, math support, and consistent output across services — without owning CPU/MEM cost or fight-with-libraries bugs — the [MD2HTML API](https://147.15.103.217.sslip.io/md2html/) is the simplest production choice.
 
 ### Setup
 
@@ -97,7 +97,7 @@ pip install requests
 ```python
 import requests
 
-MD2HTML_URL = "http://147.15.103.217/md2html/api"
+MD2HTML_URL = "https://147.15.103.217.sslip.io/md2html/api"
 API_TOKEN = "your_token_here"   # or use LTC micropayment auth
 
 def md_to_html(md_text: str) -> str:
@@ -129,7 +129,7 @@ print(md_to_html(md_input))
 - **No library pinned** to your commit — CommonMark spec updates reach you immediately
 - **Consistent output** across multiple services (your frontend and backend render the same HTML)
 - **Offloaded compute** — conversion cost isn't on your event loop
-- **Crypto billing option** via LTC payments, no Stripe/VAT overhead (see [crypto micropayments guide](http://147.15.103.217/md2html/))
+- **Crypto billing option** via LTC payments, no Stripe/VAT overhead (see [crypto micropayments guide](https://147.15.103.217.sslip.io/md2html/))
 
 ---
 
@@ -153,7 +153,7 @@ from pathlib import Path
 import mistune
 import requests
 
-MD2HTML_URL = "http://147.15.103.217/md2html/api"
+MD2HTML_URL = "https://147.15.103.217.sslip.io/md2html/api"
 TOKEN = "your_token_here"
 
 def render_via_api(md_text: str) -> str | None:
@@ -192,7 +192,7 @@ for md_file in posts_dir.glob("*.md"):
 
 Use the `markdown` or `mistune` libraries for **small, local, single-process** workloads where you control the input.
 
-Use [MD2HTML](http://147.15.103.217/md2html/) when:
+Use [MD2HTML](https://147.15.103.217.sslip.io/md2html/) when:
 - Your conversion volume crosses ~10,000/day and CPU/memory shows up on your bill
 - You need consistent GFM + syntax highlighting + math rendering across services
 - You want crypto-native billing (LTC) instead of traditional SaaS subscriptions
@@ -201,9 +201,9 @@ Use [MD2HTML](http://147.15.103.217/md2html/) when:
 
 ## Next Steps
 
-- Try the [live endpoint](http://147.15.103.217/md2html/) with `curl`
-- Read our [Markdown-to-HTML API comparison 2026](http://147.15.103.217/md2html/) for pricing benchmarks
-- Check the [crypto micropayments guide](http://147.15.103.217/md2html/) if you want to skip the API key signup
+- Try the [live endpoint](https://147.15.103.217.sslip.io/md2html/) with `curl`
+- Read our [Markdown-to-HTML API comparison 2026](https://147.15.103.217.sslip.io/md2html/) for pricing benchmarks
+- Check the [crypto micropayments guide](https://147.15.103.217.sslip.io/md2html/) if you want to skip the API key signup
 
 Markdown to HTML in Python is solved — choose the option that fits your scale and stop worrying about renderers.
 

@@ -2,7 +2,7 @@
 """MD2HTML API examples: /convert and /slug endpoints."""
 import requests
 
-BASE_URL = "http://147.15.103.217/md2html"
+BASE_URL = "https://147.15.103.217.sslip.io/md2html"
 API_KEY = "YOUR_LTC_API_KEY"  # LTC address used as API key
 
 # Convert Markdown to HTML

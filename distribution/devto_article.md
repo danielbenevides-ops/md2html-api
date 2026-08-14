@@ -26,10 +26,10 @@ You can call the API by source IP, or mint an API key without supplying personal
 
 ```bash
 # Optional: mint an independent key
-curl http://147.15.103.217/md2html/register
+curl https://147.15.103.217.sslip.io/md2html/register
 
 # Convert Markdown; replace mk_... if you chose to register
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -H "X-API-Key: mk_..." \
   -d '{"markdown":"# Hello\n\nThis is **bold**."}'
@@ -42,14 +42,14 @@ The free trial is 10 billable calls per IP or API key. After exhaustion, billabl
 The service reports version 1.4.0 and 26 product endpoints. Its OpenAPI document is available at:
 
 ```text
-http://147.15.103.217/md2html/swagger.json
+https://147.15.103.217.sslip.io/md2html/swagger.json
 ```
 
 Endpoints include conversion, sanitization, batch conversion, Markdown linting, HTML minification, table parsing, JSON formatting, text statistics, slug generation, and webhooks.
 
 ## Operational limits
 
-The deployment enforces 30 requests per minute per source IP and a 1 MiB request-body cap. Its public URL is currently HTTP-only, so it is for evaluation and non-sensitive content—not secrets or private documents.
+The deployment enforces 30 requests per minute per source IP and a 1 MiB request-body cap. The public endpoint uses TLS 1.3 with a Let's Encrypt certificate; clients should use the HTTPS base URL.
 
 ## What I learned
 
@@ -57,4 +57,4 @@ The deployment enforces 30 requests per minute per source IP and a 1 MiB request
 2. Payment copy must describe what is actually automated; vague “wallet balance” claims create a trust failure.
 3. A successful copy-paste example matters more than a long feature list.
 
-The API is live at http://147.15.103.217/md2html/. Feedback on the contract and onboarding flow is welcome.
+The API is live at https://147.15.103.217.sslip.io/md2html/. Feedback on the contract and onboarding flow is welcome.

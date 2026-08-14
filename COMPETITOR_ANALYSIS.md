@@ -1,7 +1,7 @@
 # Markdown-to-HTML Conversion API — Competitor Analysis
 
 > **Date:** 2026-08-09
-> **Purpose:** Position the MD2HTML API (`http://147.15.103.217/md2html/`) against the top Markdown-to-HTML conversion tools/APIs.
+> **Purpose:** Position the MD2HTML API (`https://147.15.103.217.sslip.io/md2html/`) against the top Markdown-to-HTML conversion tools/APIs.
 > **Method:** Live verification of MD2HTML endpoints + GitHub Markdown API; README/documentation review for hosted services and open-source libraries. Cloudflare-gated pages (ConvertAPI, AnyAPI) were spot-checked where possible; entries marked *approx.* rely on the provider's public docs or established API-marketplace listings.
 
 ---
@@ -10,7 +10,7 @@
 
 | Field | Value (verified live 2026-08-09) |
 |---|---|
-| **URL** | `http://147.15.103.217/md2html/` (docs at `/docs`, health at `/health`, payment at `/payment`) |
+| **URL** | `https://147.15.103.217.sslip.io/md2html/` (docs at `/docs`, health at `/health`, payment at `/payment`) |
 | **Pricing** | **$0.001 per call** — paid in **Litecoin (LTC)** micropayments. **No credit card, no subscription.** |
 | **Free tier** | **10 free calls per client** (per IP *or* per API key) — no signup required for the free tier |
 | **Auth** | Optional `X-API-Key` header; without a key, billing falls back to client IP address. Keys minted via `GET /register`. |
@@ -25,7 +25,7 @@
 
 | # | Name | URL | Pricing model | Free tier | Features | Max requests | CORS | Auth method | Self-host? |
 |---|------|-----|---------------|-----------|----------|-------------|------|-------------|------------|
-| **1** | **MD2HTML** | `http://147.15.103.217/md2html/` | **$0.001/call (LTC)** — pay-per-call micropayments, no subscription | **10 calls, no signup** | Convert, JSON prettify, text stats, slugify, 10 endpoints; headings/bold/italic/links/code/lists | 30 req/min/IP | ✅ `*` | `X-API-Key` (optional, IP fallback) | No (hosted) |
+| **1** | **MD2HTML** | `https://147.15.103.217.sslip.io/md2html/` | **$0.001/call (LTC)** — pay-per-call micropayments, no subscription | **10 calls, no signup** | Convert, JSON prettify, text stats, slugify, 10 endpoints; headings/bold/italic/links/code/lists | 30 req/min/IP | ✅ `*` | `X-API-Key` (optional, IP fallback) | No (hosted) |
 | **2** | **GitHub Render Markdown API** | `https://api.github.com/markdown` `POST` | **Free** (part of GitHub REST API) | 60 req/hr unauth, 5,000 req/hr auth | GFM/CommonMark render, raw mode, GFM mode, `text/x-markdown` body, returns HTML | 60/hr (unauth) or 5,000/hr (auth) up to 15,000/hr Enterprise | ✅ `Access-Control-Allow-Origin: *` (verified) | `Authorization: Bearer <token>` (PAT/OAuth), or unauthenticated from IP | No (hosted) |
 | **3** | **Marked.js** | `https://marked.js.org/` · `https://github.com/markedjs/marked` | **Free MIT** (client/server JS library, self-hosted) | Unlimited (you run it) | CommonMark/GFM by default; synchronous + async, streaming, extensions, hooks, custom renderer, code highlighting, ~40 KB | Unlimited (self-impose) | Library runs in browser — no API/CORS issue | None (library) | ✅ Self-host, runs in browser or Node |
 | **4** | **markdown-it** | `https://github.com/markdown-it/markdown-it` | **Free MIT** (library, self-hosted) | Unlimited | CommonMark-compliant, plugin API, typographer, linkify, source maps, plugin ecosystem (emoji, anchors, footnotes, sub/sup, etc.) | Unlimited | Library runs in browser — no CORS issue | None (library) | ✅ Self-host, browser/Node |
@@ -69,7 +69,7 @@
 ### 🌐 CORS enabled end-to-end
 
 - MD2HTML sends `Access-Control-Allow-Origin: *` on the `/convert` preflight and allows `Content-Type` + `X-API-Key` headers and `GET/POST/OPTIONS` methods — verified by `OPTIONS /convert` on 2026-08-09.
-- This means **a static web page can `fetch('http://147.15.103.217/md2html/convert', …)` and render the result inline** — no proxy server required.
+- This means **a static web page can `fetch('https://147.15.103.217.sslip.io/md2html/convert', …)` and render the result inline** — no proxy server required.
 - GitHub's API also allows `*` CORS, but it requires `Authorization` for meaningful limits, and the 60/hr unauthenticated cap is well below MD2HTML's 30/min, much less the 10 free calls (which expire per-client once per session, not hourly).
 
 ### 🎟️ 10 free calls per client, no key needed

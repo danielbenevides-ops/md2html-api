@@ -10,7 +10,7 @@ while true; do
     echo "PAYMENT DETECTED: $BAL_LTC LTC at $(date)" >> "$LOG"
     echo "PAYMENT DETECTED: $BAL_LTC LTC at $(date)"
     # Trigger notification
-    curl -s --max-time 5 "http://147.15.103.217/md2html/health" >/dev/null 2>&1
+    curl -s --max-time 5 "https://147.15.103.217.sslip.io/md2html/health" >/dev/null 2>&1
   fi
   sleep 60
 done

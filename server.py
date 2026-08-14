@@ -1108,7 +1108,7 @@ SWAGGER_SPEC = {
         "contact": {"url": "https://github.com/danielbenevides-ops/md2html-api"},
     },
     "servers": [
-        {"url": "http://147.15.103.217/md2html", "description": "Production VPS"},
+        {"url": "https://147.15.103.217.sslip.io/md2html", "description": "Production VPS"},
         {"url": "http://localhost:8777", "description": "Local development"},
     ],
     "components": {

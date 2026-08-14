@@ -1,7 +1,7 @@
 # 10 Communities for MD2HTML API — Posting Targets This Week
 
 > **Product:** MD2HTML API — free markdown-to-HTML API. 10 free calls, then LTC micropayments.
-> **Source:** github.com/danielbenevides-ops/md2html-api · **Live:** http://147.15.103.217/md2html/
+> **Source:** github.com/danielbenevides-ops/md2html-api · **Live:** https://147.15.103.217.sslip.io/md2html/
 > Researched Aug 7, 2026. Verify rules before each post — they change.
 
 ---
@@ -94,7 +94,7 @@
   - **Karlson's Developer Server** (https://discord.com/invite/karlson) — active API/dev discussions.
 - **Rules:** Most servers restrict self-promo to **specific channels** (e.g., #showcase, #self-promo). Read `#rules` first. Don't DM members. Post once, engage with replies. Some require a verification or minimum messages before posting links.
 - **Account reqs:** Discord account (free). Some servers require email verification or a few intro messages before posting links.
-- **Pitch:** "Hey everyone — sharing a free markdown-to-HTML API I built: one POST endpoint, no auth, returns clean HTML. 10 free calls then LTC micropayments (no credit card needed). Open source on GitHub. Looking for feedback on the API design and pricing model! 🔗 http://147.15.103.217/md2html/"
+- **Pitch:** "Hey everyone — sharing a free markdown-to-HTML API I built: one POST endpoint, no auth, returns clean HTML. 10 free calls then LTC micropayments (no credit card needed). Open source on GitHub. Looking for feedback on the API design and pricing model! 🔗 https://147.15.103.217.sslip.io/md2html/"
 - **Best time:** Evening US/EU time when channels are active.
 
 ---

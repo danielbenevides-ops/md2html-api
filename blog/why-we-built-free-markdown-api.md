@@ -33,7 +33,7 @@ That's the whole pitch. We built an API that does that, and we made it free.
 
 A dead-simple **markdown to html api**:
 
-- **Endpoint:** `POST http://147.15.103.217/md2html/`
+- **Endpoint:** `POST https://147.15.103.217.sslip.io/md2html/`
 - **Input:** JSON with a `markdown` field
 - **Output:** JSON with an `html` field — sanitized, ready to render
 - **No API key** for light use
@@ -42,7 +42,7 @@ A dead-simple **markdown to html api**:
 ### cURL
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/ \
+curl -X POST https://147.15.103.217.sslip.io/md2html/ \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello\n\nThis is **bold**."}'
 ```
@@ -52,7 +52,7 @@ curl -X POST http://147.15.103.217/md2html/ \
 ```python
 import requests
 r = requests.post(
-    "http://147.15.103.217/md2html/",
+    "https://147.15.103.217.sslip.io/md2html/",
     json={"markdown": "# Hello\n\nThis is **bold**."}
 )
 print(r.json()["html"])
@@ -61,7 +61,7 @@ print(r.json()["html"])
 ### JavaScript
 
 ```javascript
-const res = await fetch('http://147.15.103.217/md2html/', {
+const res = await fetch('https://147.15.103.217.sslip.io/md2html/', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ markdown: '# Hello\n\nThis is **bold**.' })
@@ -107,14 +107,14 @@ The endpoint is the same. The pricing is honest. You scale from "free hobby proj
 
 ```bash
 # Basic conversion — free tier
-curl -X POST http://147.15.103.217/md2html/ \
+curl -X POST https://147.15.103.217.sslip.io/md2html/ \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Title\n\n- item one\n- item two\n\n```code block```"}'
 ```
 
 ```bash
 # Same call, with a crypto payment header for high-volume access
-curl -X POST http://147.15.103.217/md2html/ \
+curl -X POST https://147.15.103.217.sslip.io/md2html/ \
   -H "Content-Type: application/json" \
   -H "X-Micro-Payment: <signed-payment-token>" \
   -d '{"markdown": "# Title\n\n- item one\n- item two"}'
@@ -138,7 +138,7 @@ Same output. Same endpoint. The only difference is whether you're in the free ti
 Free tier, no signup. One cURL command:
 
 ```bash
-curl -X POST http://147.15.103.217/md2html/ \
+curl -X POST https://147.15.103.217.sslip.io/md2html/ \
   -H "Content-Type: application/json" \
   -d '{"markdown": "# Hello World\n\n**This works.**"}'
 ```
@@ -146,7 +146,7 @@ curl -X POST http://147.15.103.217/md2html/ \
 If you build something with it, tell us. If you find a bug, open an issue. If you want to self-host, the code is right there.
 
 **Links**
-- API: `http://147.15.103.217/md2html/`
+- API: `https://147.15.103.217.sslip.io/md2html/`
 - Source: [github.com/danielbenevides-ops/md2html-api](https://github.com/danielbenevides-ops/md2html-api)
 
 Stop maintaining a Markdown parser. Start shipping features.

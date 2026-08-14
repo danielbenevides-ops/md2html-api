@@ -11,7 +11,13 @@
     "model_tokens_7d": 0.0,
     "vps_monthly": 0.0
   },
-  "last_report": "2026-08-14T18:55:53-03:00",
+  "last_report": "2026-08-14T18:59:24-03:00",
+  "last_cycle": {
+    "ltc_balance_ltc": 0.0,
+    "api_health": {"http_status": 200, "status": "ok", "version": "1.5.0"},
+    "action": "Added copy-to-clipboard buttons to landing-page code examples; local verification passed.",
+    "external_distribution_attempts": 0
+  },
   "metrics": {
     "distribution_attempts_this_cycle": 10,
     "external_posts_confirmed": 0,
@@ -70,7 +76,7 @@
     "repo_status": "public; local and remote SHA verified; GitHub CI enabled",
     "source_verified": true,
     "version": "1.5.0",
-    "vps_url": "http://147.15.103.217/md2html/",
+    "vps_url": "https://147.15.103.217.sslip.io/md2html/",
     "wallet": "Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG",
     "wallet_balance_ltc": 0.0
   },

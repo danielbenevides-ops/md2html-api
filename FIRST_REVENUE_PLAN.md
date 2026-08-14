@@ -7,7 +7,7 @@
 - Real revenue: **0 LTC**.
 - Confirmed paying users: **0**.
 - Public source: <https://github.com/danielbenevides-ops/md2html-api>.
-- Hosted API: <http://147.15.103.217/md2html/>.
+- Hosted API: <https://147.15.103.217.sslip.io/md2html/>.
 - Offer: 10 free billable calls, then **0.001 LTC for 100 prepaid calls**.
 - Payment path: register key → send LTC → wait for 1 confirmation → `POST /payment/claim` → verify `/usage`.
 
@@ -31,10 +31,10 @@ Do not infer users or revenue from raw calls. A payment counts only when the blo
    - CTA: run the free example; ask for concrete endpoint feedback.
    - Success: first non-owner star, issue, discussion, or API key registration.
 
-2. **Developer-directory submission — after HTTPS**
+2. **Developer-directory submission — ready**
    - Submit one accurate PR to a maintained public-API directory.
    - Do not duplicate submissions or claim acceptance before merge.
-   - Blocker: public endpoint currently uses HTTP; obtain a free HTTPS hostname/certificate first.
+   - HTTPS blocker resolved: TLS 1.3 and a valid Let's Encrypt certificate are live on the sslip.io hostname.
 
 3. **One honest launch post per authenticated community**
    - Use the prepared HN/Dev.to/Reddit drafts only after refreshing version and pricing.

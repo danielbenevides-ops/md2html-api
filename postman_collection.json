@@ -3,7 +3,7 @@
     "_postman_id": "md2html-api-collection-v2-1",
     "name": "MD2HTML API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Markdown-to-HTML conversion API with JSON/text utilities, billing, and analytics.\n\n## Quick Start\n1. **Register** an API key via `GET /register` (or use IP-based billing without a key).\n2. Send the key on every billed request via the `X-API-Key` header.\n3. **Free tier**: 10 calls per client (IP or API key), then HTTP 402 + LTC payment.\n\n## Rate Limiting\n30 requests/minute per IP. Max body: 1MB (`/convert` & `/sanitize`: 50KB markdown).\n\n## Pricing\n$0.001 per call, billed in Litecoin (LTC). No subscriptions, no credit cards.\n\n## Environment Variables\n- `base_url` — API root, e.g. `http://147.15.103.217/md2html`\n- `api_key` — your `mk_...` key from `/register` (leave empty for IP-based free tier)\n\nCollection uses `{{base_url}}` and `{{api_key}}` variables throughout."
+    "description": "Markdown-to-HTML conversion API with JSON/text utilities, billing, and analytics.\n\n## Quick Start\n1. **Register** an API key via `GET /register` (or use IP-based billing without a key).\n2. Send the key on every billed request via the `X-API-Key` header.\n3. **Free tier**: 10 calls per client (IP or API key), then HTTP 402 + LTC payment.\n\n## Rate Limiting\n30 requests/minute per IP. Max body: 1MB (`/convert` & `/sanitize`: 50KB markdown).\n\n## Pricing\n$0.001 per call, billed in Litecoin (LTC). No subscriptions, no credit cards.\n\n## Environment Variables\n- `base_url` — API root, e.g. `https://147.15.103.217.sslip.io/md2html`\n- `api_key` — your `mk_...` key from `/register` (leave empty for IP-based free tier)\n\nCollection uses `{{base_url}}` and `{{api_key}}` variables throughout."
   },
   "auth": {
     "type": "apikey",
@@ -28,7 +28,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://147.15.103.217/md2html",
+      "value": "https://147.15.103.217.sslip.io/md2html",
       "type": "string",
       "description": "MD2HTML API root URL. Default: live public instance."
     },
@@ -254,7 +254,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"api_key\": \"mk_2ddf91574347ae032bea14f0b313555a\",\n  \"wallet_address\": \"Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG\",\n  \"free_tier_limit\": 10,\n  \"calls_made\": 0,\n  \"remaining\": 10\n}"
+              "body": "{\n  \"api_key\": \"mk_REPLACE_WITH_YOUR_KEY\",\n  \"wallet_address\": \"Lb5EQbYXkzfgnfHcNvqesFQd7ujMtTmMCG\",\n  \"free_tier_limit\": 10,\n  \"calls_made\": 0,\n  \"remaining\": 10\n}"
             }
           ]
         },

@@ -8,7 +8,7 @@ import unittest
 
 import requests
 
-BASE_URL = os.getenv("MD2HTML_BASE_URL", "http://147.15.103.217/md2html/").rstrip("/")
+BASE_URL = os.getenv("MD2HTML_BASE_URL", "https://147.15.103.217.sslip.io/md2html/").rstrip("/")
 MARKDOWN = "# Hi\n\nSome **bold** `code` and a [link](https://x.io).\n\n- a\n- b\n"
 
 

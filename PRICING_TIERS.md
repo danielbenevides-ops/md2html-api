@@ -1,6 +1,6 @@
 # MD2HTML API — Pricing Tiers
 
-> **Live API:** <http://147.15.103.217/md2html/> · **10 endpoints** · **Litecoin (LTC) billing** · **No credit card, ever**
+> **Live API:** <https://147.15.103.217.sslip.io/md2html/> · **10 endpoints** · **Litecoin (LTC) billing** · **No credit card, ever**
 > Compiled 2026-08-09 · Strategy: maximize free → paid conversions; defend a defensible crypto-micropayment niche card-billed competitors cannot copy.
 
 ---
@@ -167,21 +167,21 @@ The `/usage` endpoint also shows your call counter, which jumps to your tier's q
 
 ```bash
 # Free — try it, no signup
-curl -X POST http://147.15.103.217/md2html/convert \
+curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
   -H "Content-Type: application/json" \
   -d '{"markdown":"# Hello **world**\n\n- item 1\n- item 2"}'
 
 # Mint a free API key (100 calls/month)
-curl http://147.15.103.217/md2html/register
+curl https://147.15.103.217.sslip.io/md2html/register
 
 # See your usage
-curl http://147.15.103.217/md2html/usage -H "X-API-Key: <your-key>"
+curl https://147.15.103.217.sslip.io/md2html/usage -H "X-API-Key: <your-key>"
 
 # Get the LTC wallet address to pay
-curl http://147.15.103.217/md2html/payment
+curl https://147.15.103.217.sslip.io/md2html/payment
 
 # Credit your key after paying
-curl -X POST http://147.15.103.217/md2html/payment \
+curl -X POST https://147.15.103.217.sslip.io/md2html/payment \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <your-key>" \
   -d '{"txid":"<your-litecoin-tx-id>","amount":0.143,"tier":"pro"}'

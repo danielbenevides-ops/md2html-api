@@ -3,7 +3,7 @@
 use serde_json::json;
 use std::error::Error;
 
-const BASE_URL: &str = "http://147.15.103.217/md2html";
+const BASE_URL: &str = "https://147.15.103.217.sslip.io/md2html";
 const API_KEY: &str = "YOUR_LTC_API_KEY"; // LTC address used as API key
 
 #[tokio::main]
