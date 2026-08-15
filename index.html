@@ -342,13 +342,10 @@ Type here, then hit Convert.</textarea>
 
     <section>
       <h2>Quick Start</h2>
-    <pre><span class="cmt"># Convert markdown to HTML in one request</span>
-    <span class="cmd">curl</span> <span class="flag">-X</span> POST <span class="str">https://147.15.103.217.sslip.io/md2html/convert</span> <span class="str">\\</span>
-      <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> <span class="str">\\</span>
-      <span class="flag">-d</span> <span class="str">'{"markdown": "# Hello\\n**World** & *go*"}'</span>
+    <pre><span class="cmt"># Copy, paste, run — your first call (10 free, no signup)</span>
+    <span class="cmd">curl</span> <span class="flag">-s</span> <span class="flag">-X</span> POST <span class="str">https://147.15.103.217.sslip.io/md2html/convert</span> <span class="flag">-H</span> <span class="str">'Content-Type: application/json'</span> <span class="flag">-d</span> <span class="str">'{"markdown":"# Hello **world**\n\nThis is Markdown."}'</span>
 
-    <span class="cmt"># Response</span>
-    <span class="cmt"># {"html": "<h1>Hello</h1>\\n<strong>World</strong> & <em>go</em>"}</span></pre>
+    <span class="cmt"># → {"html":"&lt;h1&gt;Hello &lt;strong&gt;world&lt;/strong&gt;&lt;/h1&gt;\n\n&lt;p&gt;This is Markdown.&lt;/p&gt;"}</span></pre>
     </section>
 
     <section>
