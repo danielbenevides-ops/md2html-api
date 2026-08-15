@@ -487,8 +487,8 @@ Type here, then hit Convert.</textarea>
     }
 
     function escapeHtml(s) {
-      return s.replace(/[&<>"']/g, ch => ({
-        "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;"
+      return String(s).replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
       }[ch]));
     }
 
