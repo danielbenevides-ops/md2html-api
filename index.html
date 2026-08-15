@@ -45,6 +45,48 @@
 }
 </script>
 
+<!-- FAQPage Structured Data (enables Google FAQ rich results) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is the MD2HTML API free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — the first 10 billable calls are free. After that, 0.001 LTC buys 100 prepaid calls. No subscription or credit card required."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need an account to use MD2HTML?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Free calls can use source-IP billing without signup. For a separate quota or prepaid calls, mint an API key with GET /register and send it in the X-API-Key header."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What about rate limits on the MD2HTML API?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Clients are capped at 30 requests per minute. Exceeding it returns HTTP 429. Exhausting the free allowance returns 402; a confirmed payment claim adds prepaid calls."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I self-host MD2HTML?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — MD2HTML is open source at github.com/danielbenevides-ops/md2html-api. Clone the repo, run the server, and point your requests at your own instance."
+      }
+    }
+  ]
+}
+</script>
+
 <style>
   :root {
     --bg: #0d1117;
