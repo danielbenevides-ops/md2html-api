@@ -133,7 +133,7 @@ curl -X POST https://147.15.103.217.sslip.io/md2html/convert \
 ```
 ```json
 {"html":"<h1>Hello <strong>world</strong></h1>\n<p>Visit <a href=\"https://example.com\">example</a>.</p>",
- "billing":{"status":"ok","call_count":1,"remaining":9}}
+ "billing":{"status":200,"calls_made":1,"remaining":9}}
 ```
 
 ### 19. `POST /json/prettify`
@@ -146,7 +146,7 @@ curl -X POST https://147.15.103.217.sslip.io/md2html/json/prettify \
   -d '{"json": "{\"b\":2,\"a\":1}"}'
 ```
 ```json
-{"prettified":"{\n  \"a\": 1,\n  \"b\": 2\n}","billing":{"status":"ok","call_count":3,"remaining":7}}
+{"prettified":"{\n  \"a\": 1,\n  \"b\": 2\n}","billing":{"status":200,"calls_made":3,"remaining":7}}
 ```
 
 ### 20. `POST /text/stats`
@@ -158,7 +158,7 @@ curl -X POST https://147.15.103.217.sslip.io/md2html/text/stats \
 ```
 ```json
 {"words":9,"chars":44,"chars_no_spaces":35,"reading_time_min":0.05,
- "top_words":[["the",2],["quick",1]],"billing":{"status":"ok","call_count":4,"remaining":6}}
+ "top_words":[["the",2],["quick",1]],"billing":{"status":200,"calls_made":4,"remaining":6}}
 ```
 
 ### 21. `POST /slug`
@@ -171,7 +171,7 @@ curl -X POST https://147.15.103.217.sslip.io/md2html/slug \
   -d '{"title": "Café — Menus & Drinks!"}'
 ```
 ```json
-{"slug":"cafe-menus-drinks","billing":{"status":"ok","call_count":5,"remaining":5}}
+{"slug":"cafe-menus-drinks","billing":{"status":200,"calls_made":5,"remaining":5}}
 ```
 
 ### 22. `GET /docs`
