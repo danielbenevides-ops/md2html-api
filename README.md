@@ -51,7 +51,7 @@ Want to self-host? Jump to [Self-Host](#self-host).
 
 **Base URL:** `https://147.15.103.217.sslip.io/md2html` · **Port:** `8777` · **Rate limit:** 30 req/min/IP · **Max body:** 1MB
 
-Billable `POST` endpoints are marked ✓ below; API-key management, registration, payment claim, and webhook control routes are free. All `GET` endpoints are free. Add `-H 'X-API-Key: ***'` to bill against your key rather than your IP.
+Billable `POST` endpoints are marked ✓ below; API-key management, registration, payment claim, and webhook control routes are free. All `GET` endpoints are free. Add `-H 'X-API-Key: mk_YOUR_KEY_HERE''` to bill against your key rather than your IP.
 
 | # | Method | Endpoint | Billed | Description |
 |---|--------|----------|:------:|-------------|
@@ -113,11 +113,11 @@ curl https://147.15.103.217.sslip.io/md2html/register
 ```bash
 curl -X POST https://147.15.103.217.sslip.io/md2html/payment/claim \
   -H 'Content-Type: application/json' \
-  -H 'X-API-Key: ***' \
+  -H 'X-API-Key: mk_YOUR_KEY_HERE'' \
   -d '{"txid":"<64-hex-litecoin-transaction-id>"}'
 
 curl https://147.15.103.217.sslip.io/md2html/usage \
-  -H 'X-API-Key: ***'
+  -H 'X-API-Key: mk_YOUR_KEY_HERE''
 ```
 
 A transaction cannot be claimed by two API keys. Payments below 0.001 LTC do not create a package; multiples credit proportionally (for example, 0.002 LTC credits 200 calls).

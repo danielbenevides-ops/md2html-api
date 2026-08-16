@@ -541,7 +541,7 @@ if bill.get("status") == 402:
 ```
 
 ### Manual reset (operator action)
-```bash
+```python
 # In Python console:
 import billing; billing.reset_usage("<client IP>")
 # Or restart server (wipes usage.json)
