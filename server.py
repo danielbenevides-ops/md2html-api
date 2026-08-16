@@ -914,7 +914,13 @@ def md_to_html(text, already_escaped=False):
     # Links with URL sanitization
     def safe_link(m):
         url = safe_url(m.group(2))
-        return f'<a href="{url}">{m.group(1)}</a>'
+        # The surrounding text was already HTML-escaped, so the only character
+        # that can break out of the href attribute is the double quote. Escaping
+        # just it prevents attribute-injection XSS without re-escaping already
+        # safe entities (e.g. & -> &amp; in query strings) or mangling URLs.
+        url = url.replace('"', "&quot;")
+        text = m.group(1).replace('"', "&quot;")
+        return f'<a href="{url}">{text}</a>'
     text = re.sub(r"\[(.+?)\]\((.+?)\)", safe_link, text)
     text = re.sub(r"`(.+?)`", r"<code>\1</code>", text)
 

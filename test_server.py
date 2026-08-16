@@ -311,6 +311,29 @@ class MD2HTMLAPITest(unittest.TestCase):
         self.assertEqual(body["error"], "Markdown input too large")
         self.assertEqual(body["max_bytes"], 50 * 1024)
 
+    def test_convert_link_url_is_attribute_safe(self):
+        # A quote in the link target must not break out of the href attribute
+        # (attribute-injection XSS), while real URLs keep working.
+        key = self.key()
+        status, body, _ = request(
+            self.api, "/convert", "POST",
+            {"markdown": '[click](x" onmouseover="alert(1)")'}, headers=auth(key),
+        )
+        self.assertEqual(status, 200)
+        html = body["html"]
+        # The quote is escaped to &quot; so it stays inside the href value;
+        # there is no real, unescaped ' onmouseover="...' attribute.
+        self.assertIn('href="x&quot;', html)
+        self.assertNotIn(' onmouseover="', html)
+
+        # Legitimate URLs still produce a usable href (& in query stays valid).
+        status, body, _ = request(
+            self.api, "/convert", "POST",
+            {"markdown": "[docs](https://example.com/a?b=1&c=2)"}, headers=auth(key),
+        )
+        self.assertEqual(status, 200)
+        self.assertIn('href="https://example.com/a?b=1&amp;c=2"', body["html"])
+
     def test_register_mints_independent_free_tier_key(self):
         first_status, first, _ = request(self.api, "/register")
         second_status, second, _ = request(self.api, "/register")
